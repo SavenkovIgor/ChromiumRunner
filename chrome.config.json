@@ -2,34 +2,42 @@
     "browser_path": "C:/Program Files/Google/Chrome/Application/chrome.exe",
     "args": [
         {
-            "ui_label": "User Data Directory",
-            "ui_desc": "Path to the user data directory for Chrome.",
-            "enabled": true,
+            "description": "Path to the user data dir",
+            "enabled": false,
             "arg": "user-data-dir",
             "type": "string",
             "value": "/tmp/chromium-profile"
         },
         {
-            "ui_label": "Enable Logging",
-            "ui_desc": "Enables logging for all process types.",
+            "description": "Enables logging for all process types.",
             "enabled": true,
             "arg": "enable-logging",
             "type": "flag"
         },
         {
-            "ui_label": "Disable GPU",
-            "ui_desc": "Disables GPU hardware acceleration.",
-            "enabled": false,
-            "arg": "disable-gpu",
-            "type": "flag"
+            "description": "Sets the logging verbosity level (0-3).",
+            "enabled": true,
+            "arg": "v",
+            "type": "number",
+            "value": 1
         },
         {
-            "ui_label": "Window Size",
-            "ui_desc": "Sets the initial window size. Format: WIDTH,HEIGHT",
-            "enabled": true,
+            "description": "Sets the initial window size. Format: WIDTH,HEIGHT",
+            "enabled": false,
             "arg": "window-size",
             "type": "string",
             "value": "1920,1080"
+        },
+        {
+            "description": "Specifies which modules to log.",
+            "enabled": true,
+            "arg": "vmodule",
+            "type": "list",
+            "value": [
+                {"enabled": true, "value": "net=2"},
+                {"enabled": false, "value": "gpu=1"},
+                {"enabled": true, "value": "renderer=3"}
+            ]
         }
     ]
 }
