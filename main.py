@@ -15,18 +15,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
 
-from FreeSimpleGUI import (
-    WIN_CLOSED,
-    Button,
-    Checkbox,
-    Element,
-    FileBrowse,
-    HorizontalSeparator,
-    Input,
-    Text,
-    Window,
-    theme
-)
+from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, FileBrowse,
+                           HorizontalSeparator, Input, Text, Window, theme)
 
 window: Window | None = None  # Global window variable
 theme("dark grey 9")
