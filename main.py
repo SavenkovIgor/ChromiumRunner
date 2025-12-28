@@ -1,14 +1,3 @@
-#!/usr/bin/env -S uv run --script
-
-# /// script
-# name = "chromium-runner"
-# version = "0.1.0"
-# description = "Simple GUI for running Chromium-based browsers with custom command-line arguments"
-# readme = "README.md"
-# requires-python = ">=3.14"
-# dependencies = ["freesimplegui>=5.2.0.post1"]
-# ///
-
 import json
 import subprocess
 from dataclasses import dataclass
