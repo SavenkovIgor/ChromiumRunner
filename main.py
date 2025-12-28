@@ -1,5 +1,9 @@
+#!/usr/bin/env -S uv run --script
+
+import argparse
 import json
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
@@ -9,6 +13,23 @@ from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, FileBrowse,
 
 window: Window | None = None  # Global window variable
 theme("dark grey 9")
+
+
+class AppContext:
+    @staticmethod
+    def script_dir() -> Path:
+        """Get the dir where the script or binary is located.
+
+        When frozen (PyInstaller), this returns the directory containing the executable.
+        When running from source, it returns the directory containing this script.
+        """
+        script_dir: str = sys.executable if getattr(sys, "frozen", False) else sys.argv[0]
+        return Path(script_dir).resolve().parent
+
+    @staticmethod
+    def config_dir() -> Path:
+        return AppContext.script_dir()
+
 
 # Types
 class Type:
@@ -107,6 +128,7 @@ class Arg:
 
 class Config:
     def __init__(self, filepath: Path):
+        self.path: Path = filepath
         json_data = json.loads(filepath.read_text())
         self.browser_path: Path = Path(json_data.get("browser_path", ""))
         self.args: list[Arg] = [Arg.from_dict(arg_data) for arg_data in json_data.get("args", [])]
@@ -121,12 +143,10 @@ class Config:
             return "\n".join(args)
         return f'"{self.browser_path}" {" ".join(self.enabled_args())}'
 
-
-def read_all_configs() -> list[Config]:
-    config_files = Path(__file__).parent.glob("*.config.json")
-    ret = [Config(filepath) for filepath in config_files]
-    ret = [ret[0]]  # Temporary: only load the first config
-    return ret
+    @classmethod
+    def load_configs(cls, config_dir: Path) -> list[Self]:
+        config_files: list[Path] = sorted(config_dir.glob(f"*.config.json"))
+        return [cls(filepath) for filepath in config_files]
 
 
 def update_run_command_display(config: Config):
@@ -135,13 +155,16 @@ def update_run_command_display(config: Config):
         window["run_command"].update(config.run_command(decorate=True))
 
 
-def main():
+def main(args: argparse.Namespace) -> None:
     global window
 
     # Read configuration
-    configs = read_all_configs()
+    configs = Config.load_configs(AppContext.config_dir())
+    if not configs:
+        print("No configuration files found. Exiting.")
+        return
     first_config = configs[0]
-    print(f"Loaded {len(configs)} configuration")
+    print(f"Loaded {len(configs)} configuration: {first_config.path}")
     # Create a simple window with a "Hello World" label
     layout: list[list[Element]] = []
     layout.append([Text("Chromium Runner")])
@@ -221,4 +244,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    args = parser.parse_args()
+
+    main(args)
