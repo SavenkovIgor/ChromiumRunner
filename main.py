@@ -7,7 +7,7 @@ import sys
 import tkinter as tk
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Self
+from typing import Callable, Self
 
 from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, FileBrowse,
                            HorizontalSeparator, Input, Text, Window, theme)
@@ -200,6 +200,7 @@ class App:
         first_config = self._load_first_config()
         assert first_config is not None, "Failed to load any configuration"
         self.config = first_config
+        self.handlers: dict[str, Callable] = {}
         self.window = self._create_main_window()
 
     def _load_first_config(self) -> Config | None:
@@ -211,6 +212,11 @@ class App:
 
         print("No configuration files found. Exiting.")
         return None
+
+    def _run_browser(self) -> None:
+        command = self.config.run_browser_command()
+        print(f"Running browser: {command}")
+        subprocess.Popen(command, shell=True)
 
     def _update_run_command_display(self) -> None:
         if self.window is not None and self.config is not None:
@@ -246,7 +252,9 @@ class App:
 
         # Run button
         layout.append([HorizontalSeparator()])
-        layout.append([Button("Run Browser")])
+        key = 'run_browser_button'
+        layout.append([Button("Run Browser", key=key)])
+        self.handlers[key] = self._run_browser
 
         return Window("Chromium Runner", layout)
 
@@ -262,10 +270,9 @@ class App:
             if event == WIN_CLOSED:
                 break
 
-            if event == "Run Browser":
-                command = self.config.run_browser_command()
-                print(f"Running browser: {command}")
-                subprocess.Popen(command, shell=True)
+            if event in self.handlers:
+                self.handlers[event]()
+                continue
 
             if event in checkbox_elements:
                 # Update the corresponding Arg instance
