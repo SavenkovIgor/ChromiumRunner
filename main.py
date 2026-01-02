@@ -185,7 +185,7 @@ class Config:
     def enabled_args(self) -> list[str]:
         return [str(arg) for arg in self.args if arg.enabled]
 
-    def run_command(self, decorate: bool = False) -> str:
+    def run_browser_command(self, decorate: bool = False) -> str:
         if decorate:
             args = self.enabled_args()
             args.insert(0, f'"{self.browser_path}"')
@@ -212,7 +212,7 @@ class Config:
 def update_run_command_display(config: Config):
     global window
     if window is not None:
-        window["run_command"].update(config.run_command(decorate=True))
+        window["run_browser_command"].update(config.run_browser_command(decorate=True))
 
 
 def main(args: argparse.Namespace) -> None:
@@ -248,7 +248,7 @@ def main(args: argparse.Namespace) -> None:
     # Resulting command
     layout.append([HorizontalSeparator()])
     layout.append([Text("Run Command:")])
-    layout.append([Text(config.run_command(decorate=True), key="run_command")])
+    layout.append([Text(config.run_browser_command(decorate=True), key="run_browser_command")])
 
     # Run button
     layout.append([HorizontalSeparator()])
@@ -268,7 +268,7 @@ def main(args: argparse.Namespace) -> None:
             break
 
         if event == "Run Browser":
-            command = config.run_command()
+            command = config.run_browser_command()
             print(f"Running browser: {command}")
             subprocess.Popen(command, shell=True)
 
