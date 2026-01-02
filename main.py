@@ -205,6 +205,7 @@ class App:
         configs = Config.load_configs(config_dir)
         if configs:
             self.config = configs[0]
+            print(f"Loaded configuration: {self.config.path}")
             return True
 
         print("No configuration files found. Exiting.")
@@ -247,65 +248,62 @@ class App:
 
         self.window = Window("Chromium Runner", layout)
 
+    def run_event_loop(self) -> None:
+        checkbox_elements = [f"{arg.arg}_checkbox" for arg in self.config.args]
+        input_elements = [f"{arg.arg}_input" for arg in self.config.args]
+
+        # Event loop
+        while True:
+            event, values = self.window.read()
+            # print(f"Event: {event}\nValues: {values}")
+
+            if event == WIN_CLOSED:
+                break
+
+            if event == "Run Browser":
+                command = self.config.run_browser_command()
+                print(f"Running browser: {command}")
+                subprocess.Popen(command, shell=True)
+
+            if event in checkbox_elements:
+                # Update the corresponding Arg instance
+                for arg in self.config.args:
+                    if f"{arg.arg}_checkbox" == event:
+                        arg.enabled = values[event]
+                        break
+
+                self.update_run_command_display()
+
+            if event in input_elements:
+                for arg in self.config.args:
+                    if f"{arg.arg}_input" == event:
+                        if arg.type == ArgType.STRING:
+                            arg.value = values[event]
+                        elif arg.type == ArgType.NUMBER:
+                            try:
+                                arg.value = int(values[event])
+                            except ValueError:
+                                arg.value = 0
+                        elif arg.type == ArgType.LIST:
+                            # For simplicity, assume comma-separated values
+                            items = values[event].split(",")
+                            arg.value = [
+                                ArgListItem(enabled=True, value=item.strip()) for item in items
+                            ]
+                        break
+
+                self.update_run_command_display()
+
+        self.window.close()
+
 
 def main(args: argparse.Namespace) -> None:
-    # Read configuration
     app = App()
-
     if not app.load_first_config():
         return
 
-    assert app.config is not None
-    print(f"Loaded configuration: {app.config.path}")
-
     app.create_window()
-
-    checkbox_elements = [f"{arg.arg}_checkbox" for arg in app.config.args]
-    input_elements = [f"{arg.arg}_input" for arg in app.config.args]
-
-    # Event loop
-    while True:
-        event, values = app.window.read()
-        # print(f"Event: {event}\nValues: {values}")
-
-        if event == WIN_CLOSED:
-            break
-
-        if event == "Run Browser":
-            command = app.config.run_browser_command()
-            print(f"Running browser: {command}")
-            subprocess.Popen(command, shell=True)
-
-        if event in checkbox_elements:
-            # Update the corresponding Arg instance
-            for arg in app.config.args:
-                if f"{arg.arg}_checkbox" == event:
-                    arg.enabled = values[event]
-                    break
-
-            app.update_run_command_display()
-
-        if event in input_elements:
-            for arg in app.config.args:
-                if f"{arg.arg}_input" == event:
-                    if arg.type == ArgType.STRING:
-                        arg.value = values[event]
-                    elif arg.type == ArgType.NUMBER:
-                        try:
-                            arg.value = int(values[event])
-                        except ValueError:
-                            arg.value = 0
-                    elif arg.type == ArgType.LIST:
-                        # For simplicity, assume comma-separated values
-                        items = values[event].split(",")
-                        arg.value = [
-                            ArgListItem(enabled=True, value=item.strip()) for item in items
-                        ]
-                    break
-
-            app.update_run_command_display()
-
-    app.window.close()
+    app.run_event_loop()
 
 
 if __name__ == "__main__":
