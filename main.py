@@ -46,7 +46,7 @@ class UiContext:
     @staticmethod
     def app_scaling() -> float:
         if Os.is_win():
-            return 1.0
+            return 1.5
 
         if Os.is_lin():
             return 3.0
