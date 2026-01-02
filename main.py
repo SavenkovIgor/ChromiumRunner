@@ -194,21 +194,21 @@ class Config:
         config_files: list[Path] = sorted(config_dir.glob(f"*.config.json"))
         return [cls(filepath) for filepath in config_files]
 
-    @classmethod
-    def load_first_config(cls, config_dir: Path) -> bool:
-        configs = cls.load_configs(config_dir)
-        if configs:
-            App.config = configs[0]
-            return True
-
-        print("No configuration files found. Exiting.")
-        return False
-
 
 class App:
     # Main app window and config
     window: Window | None = None
     config: Config | None = None
+
+    def load_first_config(self) -> bool:
+        config_dir = AppContext.config_dir()
+        configs = Config.load_configs(config_dir)
+        if configs:
+            self.config = configs[0]
+            return True
+
+        print("No configuration files found. Exiting.")
+        return False
 
     def update_run_command_display(self) -> None:
         if self.window is not None and self.config is not None:
@@ -252,7 +252,7 @@ def main(args: argparse.Namespace) -> None:
     # Read configuration
     app = App()
 
-    if not Config.load_first_config(AppContext.config_dir()):
+    if not app.load_first_config():
         return
 
     assert app.config is not None
