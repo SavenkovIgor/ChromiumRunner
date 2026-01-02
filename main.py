@@ -12,9 +12,6 @@ from typing import Self
 from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, FileBrowse,
                            HorizontalSeparator, Input, Text, Window, theme)
 
-window: Window | None = None  # Global window variable
-config: Config | None = None  # Global config variable
-
 # Set a theme for the GUI
 theme("dark grey 9")
 
@@ -199,34 +196,34 @@ class Config:
 
     @classmethod
     def load_first_config(cls, config_dir: Path) -> bool:
-        global config
         configs = cls.load_configs(config_dir)
         if configs:
-            config = configs[0]
+            App.config = configs[0]
             return True
 
         print("No configuration files found. Exiting.")
         return False
 
 
+class App:
+    # Main app window and config
+    window: Window | None = None
+    config: Config | None = None
+
+
 def update_run_command_display(config: Config):
-    global window
-    if window is not None:
-        window["run_browser_command"].update(config.run_browser_command(decorate=True))
+    if App.window is not None:
+        App.window["run_browser_command"].update(config.run_browser_command(decorate=True))
 
 
 def main(args: argparse.Namespace) -> None:
-    global window
-    global config
-
     # Read configuration
     if not Config.load_first_config(AppContext.config_dir()):
         return
 
-    assert config is not None
-    print(f"Loaded configuration: {config.path}")
+    assert App.config is not None
+    print(f"Loaded configuration: {App.config.path}")
 
-    # Create a simple window with a "Hello World" label
     layout: list[list[Element]] = []
     layout.append([Text("Chromium Runner")])
     layout.append([HorizontalSeparator()])
@@ -235,7 +232,7 @@ def main(args: argparse.Namespace) -> None:
     layout.append(
         [
             Text("Browser Path:"),
-            Input(default_text=str(config.browser_path), size=(60, 1)),
+            Input(default_text=str(App.config.browser_path), size=(60, 1)),
             FileBrowse(),
         ]
     )
@@ -243,46 +240,46 @@ def main(args: argparse.Namespace) -> None:
     # Arguments
     layout.append([HorizontalSeparator()])
     layout.append([Text("Command-line arguments:")])
-    layout.extend([arg.create_layout_block() for arg in config.args])
+    layout.extend([arg.create_layout_block() for arg in App.config.args])
 
     # Resulting command
     layout.append([HorizontalSeparator()])
     layout.append([Text("Run Command:")])
-    layout.append([Text(config.run_browser_command(decorate=True), key="run_browser_command")])
+    layout.append([Text(App.config.run_browser_command(decorate=True), key="run_browser_command")])
 
     # Run button
     layout.append([HorizontalSeparator()])
     layout.append([Button("Run Browser")])
 
-    window = Window("Chromium Runner", layout)
+    App.window = Window("Chromium Runner", layout)
 
-    checkbox_elements = [f"{arg.arg}_checkbox" for arg in config.args]
-    input_elements = [f"{arg.arg}_input" for arg in config.args]
+    checkbox_elements = [f"{arg.arg}_checkbox" for arg in App.config.args]
+    input_elements = [f"{arg.arg}_input" for arg in App.config.args]
 
     # Event loop
     while True:
-        event, values = window.read()
+        event, values = App.window.read()
         # print(f"Event: {event}\nValues: {values}")
 
         if event == WIN_CLOSED:
             break
 
         if event == "Run Browser":
-            command = config.run_browser_command()
+            command = App.config.run_browser_command()
             print(f"Running browser: {command}")
             subprocess.Popen(command, shell=True)
 
         if event in checkbox_elements:
             # Update the corresponding Arg instance
-            for arg in config.args:
+            for arg in App.config.args:
                 if f"{arg.arg}_checkbox" == event:
                     arg.enabled = values[event]
                     break
 
-            update_run_command_display(config)
+            update_run_command_display(App.config)
 
         if event in input_elements:
-            for arg in config.args:
+            for arg in App.config.args:
                 if f"{arg.arg}_input" == event:
                     if arg.type == ArgType.STRING:
                         arg.value = values[event]
@@ -299,9 +296,9 @@ def main(args: argparse.Namespace) -> None:
                         ]
                     break
 
-            update_run_command_display(config)
+            update_run_command_display(App.config)
 
-    window.close()
+    App.window.close()
 
 
 if __name__ == "__main__":
