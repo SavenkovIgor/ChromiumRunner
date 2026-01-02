@@ -4,6 +4,7 @@ import argparse
 import json
 import subprocess
 import sys
+import tkinter as tk
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
@@ -13,6 +14,16 @@ from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, FileBrowse,
 
 window: Window | None = None  # Global window variable
 theme("dark grey 9")
+
+
+class Os:
+    @staticmethod
+    def is_win() -> bool:
+        return sys.platform.startswith("win")
+
+    @staticmethod
+    def is_lin() -> bool:
+        return sys.platform.startswith("linux")
 
 
 class AppContext:
@@ -29,6 +40,32 @@ class AppContext:
     @staticmethod
     def config_dir() -> Path:
         return AppContext.script_dir()
+
+
+class UiContext:
+    @staticmethod
+    def app_scaling() -> float:
+        if Os.is_win():
+            return 1.5
+
+        if Os.is_lin():
+            return 3.0
+
+        return 1.0
+
+    @staticmethod
+    def init_app_scaling() -> None:
+        # Init the tk scaling
+        try:
+            root = tk.Tk()
+            root.withdraw()
+            print(f"window info:")
+            print(f"  pixels per inch: {root.winfo_fpixels('1i')}")
+            print(f"  current scaling: {root.tk.call('tk', 'scaling')}")
+
+            root.tk.call("tk", "scaling", UiContext.app_scaling())
+        except Exception:
+            pass
 
 
 # Types
@@ -246,5 +283,7 @@ def main(args: argparse.Namespace) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
+
+    UiContext.init_app_scaling()
 
     main(args)
