@@ -215,71 +215,78 @@ class App:
             cmd = self.config.run_browser_command(decorate=True)
             self.window["run_browser_command"].update(cmd)
 
+    def create_window(self) -> None:
+        layout: list[list[Element]] = []
+        layout.append([Text("Chromium Runner")])
+        layout.append([HorizontalSeparator()])
+
+        # Browser path
+        layout.append(
+            [
+                Text("Browser Path:"),
+                Input(default_text=str(self.config.browser_path), size=(60, 1)),
+                FileBrowse(),
+            ]
+        )
+
+        # Arguments
+        layout.append([HorizontalSeparator()])
+        layout.append([Text("Command-line arguments:")])
+        layout.extend([arg.create_layout_block() for arg in self.config.args])
+
+        # Resulting command
+        layout.append([HorizontalSeparator()])
+        layout.append([Text("Run Command:")])
+        layout.append(
+            [Text(self.config.run_browser_command(decorate=True), key="run_browser_command")]
+        )
+
+        # Run button
+        layout.append([HorizontalSeparator()])
+        layout.append([Button("Run Browser")])
+
+        self.window = Window("Chromium Runner", layout)
+
 
 def main(args: argparse.Namespace) -> None:
     # Read configuration
+    app = App()
+
     if not Config.load_first_config(AppContext.config_dir()):
         return
 
-    assert App.config is not None
-    print(f"Loaded configuration: {App.config.path}")
+    assert app.config is not None
+    print(f"Loaded configuration: {app.config.path}")
 
-    layout: list[list[Element]] = []
-    layout.append([Text("Chromium Runner")])
-    layout.append([HorizontalSeparator()])
+    app.create_window()
 
-    # Browser path
-    layout.append(
-        [
-            Text("Browser Path:"),
-            Input(default_text=str(App.config.browser_path), size=(60, 1)),
-            FileBrowse(),
-        ]
-    )
-
-    # Arguments
-    layout.append([HorizontalSeparator()])
-    layout.append([Text("Command-line arguments:")])
-    layout.extend([arg.create_layout_block() for arg in App.config.args])
-
-    # Resulting command
-    layout.append([HorizontalSeparator()])
-    layout.append([Text("Run Command:")])
-    layout.append([Text(App.config.run_browser_command(decorate=True), key="run_browser_command")])
-
-    # Run button
-    layout.append([HorizontalSeparator()])
-    layout.append([Button("Run Browser")])
-
-    App.window = Window("Chromium Runner", layout)
-
-    checkbox_elements = [f"{arg.arg}_checkbox" for arg in App.config.args]
-    input_elements = [f"{arg.arg}_input" for arg in App.config.args]
+    checkbox_elements = [f"{arg.arg}_checkbox" for arg in app.config.args]
+    input_elements = [f"{arg.arg}_input" for arg in app.config.args]
 
     # Event loop
     while True:
-        event, values = App.window.read()
+        event, values = app.window.read()
         # print(f"Event: {event}\nValues: {values}")
 
         if event == WIN_CLOSED:
             break
 
         if event == "Run Browser":
-            command = App.config.run_browser_command()
+            command = app.config.run_browser_command()
             print(f"Running browser: {command}")
             subprocess.Popen(command, shell=True)
 
         if event in checkbox_elements:
             # Update the corresponding Arg instance
-            for arg in App.config.args:
+            for arg in app.config.args:
                 if f"{arg.arg}_checkbox" == event:
                     arg.enabled = values[event]
                     break
 
-            App.update_run_command_display()
+            app.update_run_command_display()
 
         if event in input_elements:
-            for arg in App.config.args:
+            for arg in app.config.args:
                 if f"{arg.arg}_input" == event:
                     if arg.type == ArgType.STRING:
                         arg.value = values[event]
@@ -296,9 +303,9 @@ def main(args: argparse.Namespace) -> None:
                         ]
                     break
 
-            App.update_run_command_display()
+            app.update_run_command_display()
 
-    App.window.close()
+    app.window.close()
 
 
 if __name__ == "__main__":
