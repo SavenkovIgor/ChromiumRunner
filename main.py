@@ -167,7 +167,16 @@ class Config:
     def __init__(self, filepath: Path):
         self.path: Path = filepath
         json_data = json.loads(filepath.read_text())
-        self.browser_path: Path = Path(json_data.get("browser_path", ""))
+
+        browser_path_dict = json_data.get("browser_path", {})
+        if browser_path_dict:
+            if Os.is_win():
+                self.browser_path: Path = Path(browser_path_dict.get("win", ""))
+            elif Os.is_lin():
+                self.browser_path: Path = Path(browser_path_dict.get("lin", ""))
+        else:
+            assert False, "browser_path must be specified in config"
+
         self.args: list[Arg] = [Arg.from_dict(arg_data) for arg_data in json_data.get("args", [])]
 
     def enabled_args(self) -> list[str]:
