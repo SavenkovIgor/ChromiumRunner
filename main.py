@@ -196,27 +196,29 @@ class Config:
 
 
 class App:
-    # Main app window and config
-    window: Window | None = None
-    config: Config | None = None
+    def __init__(self) -> None:
+        first_config = self._load_first_config()
+        assert first_config is not None, "Failed to load any configuration"
+        self.config = first_config
+        self.window = self._create_main_window()
 
-    def load_first_config(self) -> bool:
+    def _load_first_config(self) -> Config | None:
         config_dir = AppContext.config_dir()
         configs = Config.load_configs(config_dir)
         if configs:
-            self.config = configs[0]
-            print(f"Loaded configuration: {self.config.path}")
-            return True
+            print(f"Loaded configuration: {configs[0].path}")
+            return configs[0]
 
         print("No configuration files found. Exiting.")
-        return False
+        return None
 
-    def update_run_command_display(self) -> None:
+    def _update_run_command_display(self) -> None:
         if self.window is not None and self.config is not None:
             cmd = self.config.run_browser_command(decorate=True)
             self.window["run_browser_command"].update(cmd)
 
-    def create_window(self) -> None:
+    def _create_main_window(self) -> Window:
+        assert self.config is not None, "Config must be loaded before creating the window"
         layout: list[list[Element]] = []
         layout.append([Text("Chromium Runner")])
         layout.append([HorizontalSeparator()])
@@ -246,7 +248,7 @@ class App:
         layout.append([HorizontalSeparator()])
         layout.append([Button("Run Browser")])
 
-        self.window = Window("Chromium Runner", layout)
+        return Window("Chromium Runner", layout)
 
     def run_event_loop(self) -> None:
         checkbox_elements = [f"{arg.arg}_checkbox" for arg in self.config.args]
@@ -272,7 +274,7 @@ class App:
                         arg.enabled = values[event]
                         break
 
-                self.update_run_command_display()
+                self._update_run_command_display()
 
             if event in input_elements:
                 for arg in self.config.args:
@@ -292,18 +294,13 @@ class App:
                             ]
                         break
 
-                self.update_run_command_display()
+                self._update_run_command_display()
 
         self.window.close()
 
 
 def main(args: argparse.Namespace) -> None:
-    app = App()
-    if not app.load_first_config():
-        return
-
-    app.create_window()
-    app.run_event_loop()
+    App().run_event_loop()
 
 
 if __name__ == "__main__":
