@@ -32,7 +32,7 @@ class AppContext:
 
 
 # Types
-class Type:
+class ArgType:
     FLAG = "flag"
     STRING = "string"
     NUMBER = "number"
@@ -50,31 +50,31 @@ class Arg:
     description: str
     enabled: bool
     arg: str
-    type: Type
+    type: ArgType
     value: str | int | list[ArgListItem] | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
         """Create an Arg instance from a dictionary."""
         # Convert list items to ArgListItem instances if type is LIST
-        if data.get("type") == Type.LIST:
+        if data.get("type") == ArgType.LIST:
             data = data.copy()
             data["value"] = [ArgListItem(**item) for item in data["value"]]
         return cls(**data)
 
     def __str__(self) -> str:
-        if self.type == Type.STRING:
+        if self.type == ArgType.STRING:
             assert self.value is not None
             return f"--{self.arg}=\"{self.value}\""
 
-        if self.type == Type.FLAG:
+        if self.type == ArgType.FLAG:
             return f"--{self.arg}"
 
-        if self.type == Type.NUMBER:
+        if self.type == ArgType.NUMBER:
             assert self.value is not None
             return f"--{self.arg}={self.value}"
 
-        if self.type == Type.LIST:
+        if self.type == ArgType.LIST:
             assert isinstance(self.value, list)
             enabled_items = [item.value for item in self.value if item.enabled]
             joined_items = ",".join(enabled_items)
@@ -94,13 +94,13 @@ class Arg:
     def create_input(self) -> Input | None:
         key = f"{self.arg}_input"
         text = str(self.value) if self.value is not None else ""
-        if self.type == Type.FLAG:
+        if self.type == ArgType.FLAG:
             return None
-        if self.type == Type.STRING:
+        if self.type == ArgType.STRING:
             return Input(key=key, default_text=text, size=(40, 1), enable_events=True)
-        if self.type == Type.NUMBER:
+        if self.type == ArgType.NUMBER:
             return Input(key=key, default_text=text, size=(20, 1), enable_events=True)
-        if self.type == Type.LIST:
+        if self.type == ArgType.LIST:
             return Input(key=key, default_text=text, size=(40, 1), enable_events=True)
         return None
 
@@ -109,7 +109,7 @@ class Arg:
         # Base checkbox to enable/disable the argument
         ret.append([self.create_checkbox()])
 
-        if self.type == Type.LIST:
+        if self.type == ArgType.LIST:
             assert isinstance(self.value, list)
             for item in self.value:
                 ret.append(
@@ -223,14 +223,14 @@ def main(args: argparse.Namespace) -> None:
         if event in input_elements:
             for arg in first_config.args:
                 if f"{arg.arg}_input" == event:
-                    if arg.type == Type.STRING:
+                    if arg.type == ArgType.STRING:
                         arg.value = values[event]
-                    elif arg.type == Type.NUMBER:
+                    elif arg.type == ArgType.NUMBER:
                         try:
                             arg.value = int(values[event])
                         except ValueError:
                             arg.value = 0
-                    elif arg.type == Type.LIST:
+                    elif arg.type == ArgType.LIST:
                         # For simplicity, assume comma-separated values
                         items = values[event].split(",")
                         arg.value = [
