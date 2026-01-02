@@ -13,6 +13,9 @@ from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, FileBrowse,
                            HorizontalSeparator, Input, Text, Window, theme)
 
 window: Window | None = None  # Global window variable
+config: Config | None = None  # Global config variable
+
+# Set a theme for the GUI
 theme("dark grey 9")
 
 
@@ -194,6 +197,17 @@ class Config:
         config_files: list[Path] = sorted(config_dir.glob(f"*.config.json"))
         return [cls(filepath) for filepath in config_files]
 
+    @classmethod
+    def load_first_config(cls, config_dir: Path) -> bool:
+        global config
+        configs = cls.load_configs(config_dir)
+        if configs:
+            config = configs[0]
+            return True
+
+        print("No configuration files found. Exiting.")
+        return False
+
 
 def update_run_command_display(config: Config):
     global window
@@ -203,14 +217,15 @@ def update_run_command_display(config: Config):
 
 def main(args: argparse.Namespace) -> None:
     global window
+    global config
 
     # Read configuration
-    configs = Config.load_configs(AppContext.config_dir())
-    if not configs:
-        print("No configuration files found. Exiting.")
+    if not Config.load_first_config(AppContext.config_dir()):
         return
-    first_config = configs[0]
-    print(f"Loaded {len(configs)} configuration: {first_config.path}")
+
+    assert config is not None
+    print(f"Loaded configuration: {config.path}")
+
     # Create a simple window with a "Hello World" label
     layout: list[list[Element]] = []
     layout.append([Text("Chromium Runner")])
@@ -220,7 +235,7 @@ def main(args: argparse.Namespace) -> None:
     layout.append(
         [
             Text("Browser Path:"),
-            Input(default_text=str(first_config.browser_path), size=(60, 1)),
+            Input(default_text=str(config.browser_path), size=(60, 1)),
             FileBrowse(),
         ]
     )
@@ -228,12 +243,12 @@ def main(args: argparse.Namespace) -> None:
     # Arguments
     layout.append([HorizontalSeparator()])
     layout.append([Text("Command-line arguments:")])
-    layout.extend([arg.create_layout_block() for arg in first_config.args])
+    layout.extend([arg.create_layout_block() for arg in config.args])
 
     # Resulting command
     layout.append([HorizontalSeparator()])
     layout.append([Text("Run Command:")])
-    layout.append([Text(first_config.run_command(decorate=True), key="run_command")])
+    layout.append([Text(config.run_command(decorate=True), key="run_command")])
 
     # Run button
     layout.append([HorizontalSeparator()])
@@ -241,8 +256,8 @@ def main(args: argparse.Namespace) -> None:
 
     window = Window("Chromium Runner", layout)
 
-    checkbox_elements = [f"{arg.arg}_checkbox" for arg in first_config.args]
-    input_elements = [f"{arg.arg}_input" for arg in first_config.args]
+    checkbox_elements = [f"{arg.arg}_checkbox" for arg in config.args]
+    input_elements = [f"{arg.arg}_input" for arg in config.args]
 
     # Event loop
     while True:
@@ -253,21 +268,21 @@ def main(args: argparse.Namespace) -> None:
             break
 
         if event == "Run Browser":
-            command = first_config.run_command()
+            command = config.run_command()
             print(f"Running browser: {command}")
             subprocess.Popen(command, shell=True)
 
         if event in checkbox_elements:
             # Update the corresponding Arg instance
-            for arg in first_config.args:
+            for arg in config.args:
                 if f"{arg.arg}_checkbox" == event:
                     arg.enabled = values[event]
                     break
 
-            update_run_command_display(first_config)
+            update_run_command_display(config)
 
         if event in input_elements:
-            for arg in first_config.args:
+            for arg in config.args:
                 if f"{arg.arg}_input" == event:
                     if arg.type == ArgType.STRING:
                         arg.value = values[event]
@@ -284,7 +299,7 @@ def main(args: argparse.Namespace) -> None:
                         ]
                     break
 
-            update_run_command_display(first_config)
+            update_run_command_display(config)
 
     window.close()
 
