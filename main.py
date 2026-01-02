@@ -210,10 +210,10 @@ class App:
     window: Window | None = None
     config: Config | None = None
 
-
-def update_run_command_display(config: Config):
-    if App.window is not None:
-        App.window["run_browser_command"].update(config.run_browser_command(decorate=True))
+    def update_run_command_display(self) -> None:
+        if self.window is not None and self.config is not None:
+            cmd = self.config.run_browser_command(decorate=True)
+            self.window["run_browser_command"].update(cmd)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -276,7 +276,7 @@ def main(args: argparse.Namespace) -> None:
                     arg.enabled = values[event]
                     break
 
-            update_run_command_display(App.config)
+            App.update_run_command_display()
 
         if event in input_elements:
             for arg in App.config.args:
@@ -296,7 +296,7 @@ def main(args: argparse.Namespace) -> None:
                         ]
                     break
 
-            update_run_command_display(App.config)
+            App.update_run_command_display()
 
     App.window.close()
 
