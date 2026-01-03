@@ -125,9 +125,6 @@ class Arg:
             key=f"{self.arg}_checkbox", text=label, default=self.enabled, enable_events=True
         )
 
-    def create_spacer(self) -> Element:
-        return Text("     ")
-
     def create_input(self) -> Input | None:
         key = f"{self.arg}_input"
         text = str(self.value) if self.value is not None else ""
@@ -203,6 +200,10 @@ class App:
             self.window["run_browser_command"].update(cmd)
 
     @staticmethod
+    def h_spacer() -> Element:
+        return Text("     ")
+
+    @staticmethod
     def _create_layout_for_arg(arg: Arg) -> list[list[Element]]:
         ret: list[list[Element]] = []
         # Base checkbox to enable/disable the argument
@@ -213,7 +214,7 @@ class App:
             for item in arg.value:
                 ret.append(
                     [
-                        arg.create_spacer(),
+                        App.h_spacer(),
                         Checkbox(text=f"{item.value}", default=item.enabled, enable_events=True),
                     ]
                 )
@@ -221,7 +222,7 @@ class App:
 
         input_field = arg.create_input()
         if input_field is not None:
-            ret.append([arg.create_spacer(), input_field])
+            ret.append([App.h_spacer(), input_field])
         return ret
 
     def _create_main_window(self) -> Window:
