@@ -232,14 +232,16 @@ class App:
     def _create_main_window(self) -> Window:
         assert self.config is not None, "Config must be loaded before creating the window"
         layout: list[list[Element]] = []
-        layout.append([Text("Chromium Runner")])
+        app_description = (
+            "\nA simple app to run Chromium-based browsers with custom command-line arguments.\n"
+        )
+        layout.append([Text(app_description, font=("Any", 12))])
         layout.append([HorizontalSeparator()])
 
         # Browser path
         bp_row: list[Element] = []
         bp_row.append(Text("Browser Path:"))
-        bp_row.append(Input(default_text=str(self.config.browser_path), size=(60, 1)))
-        bp_row.append(FileBrowse())
+        bp_row.append(Input(default_text=str(self.config.browser_path)))
         layout.append(bp_row)
 
         # Arguments
