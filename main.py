@@ -114,13 +114,13 @@ class Arg:
 
         if self.type == ArgType.NUMBER:
             assert self.value is not None
-            return f"{self.flag_name}={self.value}"
+            return f'{self.flag_name}={self.value}'
 
         if self.type == ArgType.LIST:
             assert isinstance(self.value, list)
             enabled_items = [item.value for item in self.value if item.enabled]
-            joined_items = ",".join(enabled_items)
-            return f"{self.flag_name}={joined_items}"
+            joined_items = ','.join(enabled_items)
+            return f'{self.flag_name}="{joined_items}"'
 
         raise ValueError(f"Unknown Arg type: {self.type}")
 
@@ -141,15 +141,14 @@ class Config:
 
         self.args: list[Arg] = [Arg.from_dict(arg_data) for arg_data in json_data.get("args", [])]
 
-    def enabled_args(self) -> list[str]:
-        return [str(arg) for arg in self.args if arg.enabled]
+    def run_browser_command(self) -> list[str]:
+        args: list[str] = [str(self.browser_path)]
+        # Add enabled arguments
+        args.extend([str(arg) for arg in self.args if arg.enabled])
+        return args
 
-    def run_browser_command(self, decorate: bool = False) -> str:
-        if decorate:
-            args = self.enabled_args()
-            args.insert(0, f'"{self.browser_path}"')
-            return "\n".join(args)
-        return f'"{self.browser_path}" {" ".join(self.enabled_args())}'
+    def decorated_run_browser_command(self) -> str:
+        return '\n'.join(self.run_browser_command())
 
     @classmethod
     def load_configs(cls, config_dir: Path) -> list[Self]:
@@ -165,7 +164,7 @@ class App:
 
         # UI elements
         self.handlers: dict[str, Callable] = {}
-        self.command_output = Text(self.config.run_browser_command(decorate=True))
+        self.command_output = Text(self.config.decorated_run_browser_command())
         self.window = self._create_main_window()
 
     def _load_first_config(self) -> Config | None:
@@ -180,12 +179,12 @@ class App:
 
     def _run_browser(self) -> None:
         command = self.config.run_browser_command()
-        print(f"Running browser: {command}")
+        print(f'Running browser: {" ".join(command)}')
         subprocess.Popen(command, shell=True)
 
     def _update_run_command_display(self) -> None:
         if self.window is not None and self.config is not None:
-            cmd = self.config.run_browser_command(decorate=True)
+            cmd = self.config.decorated_run_browser_command()
             self.command_output.update(cmd)
 
     @staticmethod
