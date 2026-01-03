@@ -155,6 +155,36 @@ class Config:
     def decorated_run_browser_command(self) -> str:
         return '\n'.join(self.run_browser_command())
 
+    def find_arg(self, arg_name: str) -> Arg | None:
+        return next((arg for arg in self.args if arg.name == arg_name), None)
+
+    def find_arg_list_item(self, arg_list_name: str) -> ArgListItem | None:
+        for arg in self.args:
+            if arg.type != ArgType.LIST:
+                continue
+            assert isinstance(arg.value, list)
+            for item in arg.value:
+                full_name = f"{arg.name}_{item.value}"
+                if full_name == arg_list_name:
+                    return item
+        return None
+
+    def set_value(self, arg_name: str, value: str) -> None:
+        arg = self.find_arg(arg_name)
+        assert arg is not None, f"Argument with name '{arg_name}' not found in config"
+        if arg.type == ArgType.STRING:
+            assert isinstance(value, str)
+            arg.value = value
+        elif arg.type == ArgType.NUMBER:
+            try:
+                arg.value = int(value)
+            except ValueError:
+                arg.value = 0
+        elif arg.type == ArgType.LIST:
+            # For simplicity, assume comma-separated values
+            items = value.split(",")
+            arg.value = [ArgListItem(enabled=True, value=item.strip()) for item in items]
+
 
 class App:
     def __init__(self) -> None:
@@ -216,12 +246,12 @@ class App:
         if arg.type == ArgType.LIST:
             assert isinstance(arg.value, list)
             for item in arg.value:
-                ret.append(
-                    [
-                        App.h_spacer(),
-                        Checkbox(text=f"{item.value}", default=item.enabled, enable_events=True),
-                    ]
-                )
+                key = f'{arg.name}_{item.value}_list_checkbox'
+                text = f'{item.value}'
+                row: list[Element] = []
+                row.append(App.h_spacer())
+                row.append(Checkbox(key=key, text=text, default=item.enabled, enable_events=True))
+                ret.append(row)
             return ret
 
         input_field = App.create_arg_input(arg)
@@ -264,8 +294,9 @@ class App:
         return Window("Chromium Runner", layout)
 
     def run_event_loop(self) -> None:
-        checkbox_elements = [f"{arg.name}_checkbox" for arg in self.config.args]
-        input_elements = [f"{arg.name}_input" for arg in self.config.args]
+        list_checkbox_suffix = "_list_checkbox"
+        checkbox_suffix = "_checkbox"
+        input_suffix = "_input"
 
         # Event loop
         while True:
@@ -277,36 +308,25 @@ class App:
 
             if event in self.handlers:
                 self.handlers[event]()
-                continue
 
-            if event in checkbox_elements:
-                # Update the corresponding Arg instance
-                for arg in self.config.args:
-                    if f"{arg.name}_checkbox" == event:
-                        arg.enabled = values[event]
-                        break
+            elif event.endswith(list_checkbox_suffix):
+                arg_list_item_name = event.replace(list_checkbox_suffix, "", -1)
+                item =self.config.find_arg_list_item(arg_list_item_name)
+                if item is not None:
+                    item.enabled = values[event]
 
-                self._update_run_command_display()
+            elif event.endswith(checkbox_suffix):
+                # Cut off the suffix to get the arg name
+                arg_name = event.replace(checkbox_suffix, "", -1)
+                arg = self.config.find_arg(arg_name)
+                if arg is not None:
+                    arg.enabled = values[event]
 
-            if event in input_elements:
-                for arg in self.config.args:
-                    if f"{arg.name}_input" == event:
-                        if arg.type == ArgType.STRING:
-                            arg.value = values[event]
-                        elif arg.type == ArgType.NUMBER:
-                            try:
-                                arg.value = int(values[event])
-                            except ValueError:
-                                arg.value = 0
-                        elif arg.type == ArgType.LIST:
-                            # For simplicity, assume comma-separated values
-                            items = values[event].split(",")
-                            arg.value = [
-                                ArgListItem(enabled=True, value=item.strip()) for item in items
-                            ]
-                        break
+            elif event.endswith(input_suffix):
+                arg_name = event.replace(input_suffix, "", -1)
+                self.config.set_value(arg_name, values[event])
 
-                self._update_run_command_display()
+            self._update_run_command_display()
 
         self.window.close()
 
