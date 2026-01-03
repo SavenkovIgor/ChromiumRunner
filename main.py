@@ -124,19 +124,6 @@ class Arg:
 
         raise ValueError(f"Unknown Arg type: {self.type}")
 
-    def create_input(self) -> Input | None:
-        key = f"{self.arg}_input"
-        text = str(self.value) if self.value is not None else ""
-        if self.type == ArgType.FLAG:
-            return None
-        if self.type == ArgType.STRING:
-            return Input(key=key, default_text=text, size=(40, 1), enable_events=True)
-        if self.type == ArgType.NUMBER:
-            return Input(key=key, default_text=text, size=(20, 1), enable_events=True)
-        if self.type == ArgType.LIST:
-            return Input(key=key, default_text=text, size=(40, 1), enable_events=True)
-        return None
-
 
 class Config:
     def __init__(self, filepath: Path):
@@ -209,6 +196,16 @@ class App:
         return Checkbox(key=key, text=label, default=arg.enabled, enable_events=True)
 
     @staticmethod
+    def create_arg_input(arg: Arg) -> Input | None:
+        if arg.type not in (ArgType.STRING, ArgType.NUMBER):
+            return None
+
+        assert arg.value is not None
+        key = f"{arg.arg}_input"
+        text = str(arg.value)
+        return Input(key=key, default_text=text, size=(40, 1), enable_events=True)
+
+    @staticmethod
     def _create_layout_for_arg(arg: Arg) -> list[list[Element]]:
         ret: list[list[Element]] = []
         # Base checkbox to enable/disable the argument
@@ -225,7 +222,7 @@ class App:
                 )
             return ret
 
-        input_field = arg.create_input()
+        input_field = App.create_arg_input(arg)
         if input_field is not None:
             ret.append([App.h_spacer(), input_field])
         return ret
