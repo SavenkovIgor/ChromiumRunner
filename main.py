@@ -141,6 +141,11 @@ class Config:
 
         self.args: list[Arg] = [Arg.from_dict(arg_data) for arg_data in json_data.get("args", [])]
 
+    @classmethod
+    def load_configs(cls, config_dir: Path) -> list[Self]:
+        config_files: list[Path] = sorted(config_dir.glob(f"*.config.json"))
+        return [cls(filepath) for filepath in config_files]
+
     def run_browser_command(self) -> list[str]:
         args: list[str] = [str(self.browser_path)]
         # Add enabled arguments
@@ -149,11 +154,6 @@ class Config:
 
     def decorated_run_browser_command(self) -> str:
         return '\n'.join(self.run_browser_command())
-
-    @classmethod
-    def load_configs(cls, config_dir: Path) -> list[Self]:
-        config_files: list[Path] = sorted(config_dir.glob(f"*.config.json"))
-        return [cls(filepath) for filepath in config_files]
 
 
 class App:
