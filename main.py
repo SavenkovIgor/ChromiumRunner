@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Self
 
-from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, FileBrowse,
+from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element,
                            HorizontalSeparator, Input, Text, Window, theme)
 
 # Set a theme for the GUI
@@ -311,7 +311,7 @@ class App:
 
             elif event.endswith(list_checkbox_suffix):
                 arg_list_item_name = event.replace(list_checkbox_suffix, "", -1)
-                item =self.config.find_arg_list_item(arg_list_item_name)
+                item = self.config.find_arg_list_item(arg_list_item_name)
                 if item is not None:
                     item.enabled = values[event]
 
