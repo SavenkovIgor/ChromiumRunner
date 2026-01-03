@@ -141,27 +141,6 @@ class Arg:
             return Input(key=key, default_text=text, size=(40, 1), enable_events=True)
         return None
 
-    def create_layout_block(self) -> list[list[Element]]:
-        ret: list[list[Element]] = []
-        # Base checkbox to enable/disable the argument
-        ret.append([self.create_checkbox()])
-
-        if self.type == ArgType.LIST:
-            assert isinstance(self.value, list)
-            for item in self.value:
-                ret.append(
-                    [
-                        self.create_spacer(),
-                        Checkbox(text=f"{item.value}", default=item.enabled, enable_events=True),
-                    ]
-                )
-            return ret
-
-        input_field = self.create_input()
-        if input_field is not None:
-            ret.append([self.create_spacer(), input_field])
-        return ret
-
 
 class Config:
     def __init__(self, filepath: Path):
@@ -223,6 +202,28 @@ class App:
             cmd = self.config.run_browser_command(decorate=True)
             self.window["run_browser_command"].update(cmd)
 
+    @staticmethod
+    def _create_layout_for_arg(arg: Arg) -> list[list[Element]]:
+        ret: list[list[Element]] = []
+        # Base checkbox to enable/disable the argument
+        ret.append([arg.create_checkbox()])
+
+        if arg.type == ArgType.LIST:
+            assert isinstance(arg.value, list)
+            for item in arg.value:
+                ret.append(
+                    [
+                        arg.create_spacer(),
+                        Checkbox(text=f"{item.value}", default=item.enabled, enable_events=True),
+                    ]
+                )
+            return ret
+
+        input_field = arg.create_input()
+        if input_field is not None:
+            ret.append([arg.create_spacer(), input_field])
+        return ret
+
     def _create_main_window(self) -> Window:
         assert self.config is not None, "Config must be loaded before creating the window"
         layout: list[list[Element]] = []
@@ -230,18 +231,17 @@ class App:
         layout.append([HorizontalSeparator()])
 
         # Browser path
-        layout.append(
-            [
-                Text("Browser Path:"),
-                Input(default_text=str(self.config.browser_path), size=(60, 1)),
-                FileBrowse(),
-            ]
-        )
+        bp_row: list[Element] = []
+        bp_row.append(Text("Browser Path:"))
+        bp_row.append(Input(default_text=str(self.config.browser_path), size=(60, 1)))
+        bp_row.append(FileBrowse())
+        layout.append(bp_row)
 
         # Arguments
         layout.append([HorizontalSeparator()])
         layout.append([Text("Command-line arguments:")])
-        layout.extend([arg.create_layout_block() for arg in self.config.args])
+        for arg in self.config.args:
+            layout.extend(self._create_layout_for_arg(arg))
 
         # Resulting command
         layout.append([HorizontalSeparator()])
