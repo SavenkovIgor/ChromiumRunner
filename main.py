@@ -99,28 +99,33 @@ class Arg:
             data["value"] = [ArgListItem(**item) for item in data["value"]]
         return cls(**data)
 
+    @property
+    def flag_name(self) -> str:
+        return f"--{self.arg}"
+
     def __str__(self) -> str:
         if self.type == ArgType.STRING:
             assert self.value is not None
-            return f"--{self.arg}=\"{self.value}\""
+            return f'{self.flag_name}="{self.value}"'
 
         if self.type == ArgType.FLAG:
-            return f"--{self.arg}"
+            assert self.value is None
+            return self.flag_name
 
         if self.type == ArgType.NUMBER:
             assert self.value is not None
-            return f"--{self.arg}={self.value}"
+            return f"{self.flag_name}={self.value}"
 
         if self.type == ArgType.LIST:
             assert isinstance(self.value, list)
             enabled_items = [item.value for item in self.value if item.enabled]
             joined_items = ",".join(enabled_items)
-            return f"--{self.arg}={joined_items}"
+            return f"{self.flag_name}={joined_items}"
 
         raise ValueError(f"Unknown Arg type: {self.type}")
 
     def create_checkbox(self) -> Checkbox:
-        label = f"--{self.arg} ({self.description})"
+        label = f"{self.flag_name} ({self.description})"
         return Checkbox(
             key=f"{self.arg}_checkbox", text=label, default=self.enabled, enable_events=True
         )
