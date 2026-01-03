@@ -124,12 +124,6 @@ class Arg:
 
         raise ValueError(f"Unknown Arg type: {self.type}")
 
-    def create_checkbox(self) -> Checkbox:
-        label = f"{self.flag_name} ({self.description})"
-        return Checkbox(
-            key=f"{self.arg}_checkbox", text=label, default=self.enabled, enable_events=True
-        )
-
     def create_input(self) -> Input | None:
         key = f"{self.arg}_input"
         text = str(self.value) if self.value is not None else ""
@@ -209,10 +203,16 @@ class App:
         return Text("     ")
 
     @staticmethod
+    def create_arg_checkbox(arg: Arg) -> Checkbox:
+        key = f"{arg.arg}_checkbox"
+        label = f"{arg.flag_name} ({arg.description})"
+        return Checkbox(key=key, text=label, default=arg.enabled, enable_events=True)
+
+    @staticmethod
     def _create_layout_for_arg(arg: Arg) -> list[list[Element]]:
         ret: list[list[Element]] = []
         # Base checkbox to enable/disable the argument
-        ret.append([arg.create_checkbox()])
+        ret.append([App.create_arg_checkbox(arg)])
 
         if arg.type == ArgType.LIST:
             assert isinstance(arg.value, list)
