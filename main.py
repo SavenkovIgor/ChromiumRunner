@@ -162,7 +162,10 @@ class App:
         first_config = self._load_first_config()
         assert first_config is not None, "Failed to load any configuration"
         self.config = first_config
+
+        # UI elements
         self.handlers: dict[str, Callable] = {}
+        self.command_output = Text(self.config.run_browser_command(decorate=True))
         self.window = self._create_main_window()
 
     def _load_first_config(self) -> Config | None:
@@ -183,7 +186,7 @@ class App:
     def _update_run_command_display(self) -> None:
         if self.window is not None and self.config is not None:
             cmd = self.config.run_browser_command(decorate=True)
-            self.window["run_browser_command"].update(cmd)
+            self.command_output.update(cmd)
 
     @staticmethod
     def h_spacer() -> Element:
@@ -249,9 +252,7 @@ class App:
         # Resulting command
         layout.append([HorizontalSeparator()])
         layout.append([Text("Run Command:")])
-        layout.append(
-            [Text(self.config.run_browser_command(decorate=True), key="run_browser_command")]
-        )
+        layout.append([self.command_output])
 
         # Run button
         layout.append([HorizontalSeparator()])
