@@ -84,11 +84,11 @@ class ArgListItem:
 
 @dataclass
 class Arg:
+    name: str
     description: str
-    enabled: bool
-    arg: str
     type: ArgType
     value: str | int | list[ArgListItem] | None = None
+    enabled: bool = True
 
     @classmethod
     def from_dict(cls, data: dict) -> Self:
@@ -101,7 +101,7 @@ class Arg:
 
     @property
     def flag_name(self) -> str:
-        return f"--{self.arg}"
+        return f"--{self.name}"
 
     def __str__(self) -> str:
         if self.type == ArgType.STRING:
@@ -194,7 +194,7 @@ class App:
 
     @staticmethod
     def create_arg_checkbox(arg: Arg) -> Checkbox:
-        key = f"{arg.arg}_checkbox"
+        key = f"{arg.name}_checkbox"
         label = f"{arg.flag_name} ({arg.description})"
         return Checkbox(key=key, text=label, default=arg.enabled, enable_events=True)
 
@@ -204,7 +204,7 @@ class App:
             return None
 
         assert arg.value is not None
-        key = f"{arg.arg}_input"
+        key = f"{arg.name}_input"
         text = str(arg.value)
         return Input(key=key, default_text=text, size=(40, 1), enable_events=True)
 
@@ -263,8 +263,8 @@ class App:
         return Window("Chromium Runner", layout)
 
     def run_event_loop(self) -> None:
-        checkbox_elements = [f"{arg.arg}_checkbox" for arg in self.config.args]
-        input_elements = [f"{arg.arg}_input" for arg in self.config.args]
+        checkbox_elements = [f"{arg.name}_checkbox" for arg in self.config.args]
+        input_elements = [f"{arg.name}_input" for arg in self.config.args]
 
         # Event loop
         while True:
@@ -281,7 +281,7 @@ class App:
             if event in checkbox_elements:
                 # Update the corresponding Arg instance
                 for arg in self.config.args:
-                    if f"{arg.arg}_checkbox" == event:
+                    if f"{arg.name}_checkbox" == event:
                         arg.enabled = values[event]
                         break
 
@@ -289,7 +289,7 @@ class App:
 
             if event in input_elements:
                 for arg in self.config.args:
-                    if f"{arg.arg}_input" == event:
+                    if f"{arg.name}_input" == event:
                         if arg.type == ArgType.STRING:
                             arg.value = values[event]
                         elif arg.type == ArgType.NUMBER:
