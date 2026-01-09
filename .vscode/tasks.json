@@ -10,6 +10,14 @@
             "problemMatcher": [
                 "$python"
             ]
+        },
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "${workspaceFolder}/build.py",
+            "problemMatcher": [
+                "$python"
+            ]
         }
     ]
 }
