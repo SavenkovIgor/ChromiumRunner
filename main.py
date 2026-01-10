@@ -271,7 +271,7 @@ class App:
         assert arg.value is not None
         key = f'{arg.name}_input'
         text = str(arg.value)
-        return Input(key=key, default_text=text, size=(40, 1), enable_events=True)
+        return Input(key=key, default_text=text, size=(40, 1), enable_events=True, expand_x=True)
 
     @staticmethod
     def _create_layout_for_arg(arg: Arg) -> list[list[Element]]:
