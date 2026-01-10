@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tkinter as tk
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Self
@@ -64,15 +65,21 @@ class UiContext:
 
 class ValueInterpolator:
     """
-    Simple interpolator for `${env:NAME}` patterns with escaping support.
-    Only supports the `env:` provider and prints an error when an env var is missing.
+    Simple interpolator for `${env:NAME}` and `${tool:timestamp}` patterns with escaping support.
+    Supports the `env:` provider and `tool:timestamp` which returns the current time in ISO 8601 (UTC).
     """
+
+    def timestamp(self) -> str:
+        """Return current UTC timestamp in a filename-safe format (e.g. 2026-01-11_12-34-56)."""
+        # Use UTC and produce a hyphenated filename-safe timestamp: YYYY-MM-DD_HH-MM-SS
+        return datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
 
     def interpolate_string(self, s: str) -> str:
         pattern = re.compile(r'(\\)?\$\{([^}]+)\}')
 
         def repl(m):
             ENV_PREFIX = "env:"
+            TOOL_PREFIX = "tool:"
             # If escaped with backslash (group 1), return the literal without the backslash.
             if m.group(1):
                 return "${" + m.group(2) + "}"
@@ -81,10 +88,15 @@ class ValueInterpolator:
             if inner.startswith(ENV_PREFIX):
                 name = inner[len(ENV_PREFIX) :]
                 val = os.environ.get(name)
-                if val is None:
+                if val is not None:
+                    return val
+                else:
                     print(f"Missing env var: {name}")
-                    return f'${{{inner}}}'
-                return val
+
+            if inner.startswith(TOOL_PREFIX):
+                name = inner[len(TOOL_PREFIX) :]
+                if name == "timestamp":
+                    return self.timestamp()
 
             # Unknown provider; leave placeholder unchanged.
             return f'${{{inner}}}'

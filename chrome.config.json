@@ -12,7 +12,7 @@
             "name": "log-file",
             "description": "Path to the log file",
             "type": "string",
-            "value": "${env:HOME}\\Desktop\\Chromium.log",
+            "value": "${env:HOME}\\Desktop\\Chromium_${tool:timestamp}.log",
             "enabled": true
         },
         {
@@ -27,14 +27,14 @@
             "description": "Sets the logging verbosity level (0-3).",
             "type": "number",
             "value": 1,
-            "enabled": true
+            "enabled": false
         },
         {
             "name": "window-size",
             "description": "Sets the initial window size. Format: WIDTH,HEIGHT",
             "type": "string",
             "value": "600,400",
-            "enabled": true
+            "enabled": false
         },
         {
             "name": "vmodule",
