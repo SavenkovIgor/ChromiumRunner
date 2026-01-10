@@ -15,6 +15,7 @@
             "name": "enable-logging",
             "description": "Enables logging for all process types.",
             "type": "flag",
+            "value": null,
             "enabled": true
         },
         {

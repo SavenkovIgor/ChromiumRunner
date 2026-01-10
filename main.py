@@ -69,7 +69,6 @@ class UiContext:
             pass
 
 
-# Types
 class ArgType(Enum):
     FLAG = "flag"
     STRING = "string"
@@ -82,6 +81,9 @@ class ArgListItem:
     enabled: bool
     value: str
 
+    def to_json(self) -> dict:
+        return {"enabled": self.enabled, "value": self.value}
+
 
 @dataclass
 class Arg:
@@ -93,13 +95,24 @@ class Arg:
 
     @classmethod
     def from_json(cls, json: dict) -> Self:
-        """Create an Arg instance from a dictionary."""
-        # Convert list items to ArgListItem instances if type is LIST
         json = json.copy()
         json["type"] = ArgType(json["type"])
         if json["type"] == ArgType.LIST:
             json["value"] = [ArgListItem(**item) for item in json["value"]]
         return cls(**json)
+
+    def to_json(self) -> dict:
+        json: dict = {}
+        json["name"] = self.name
+        json["description"] = self.description
+        json["type"] = self.type.value
+        if self.type == ArgType.LIST and isinstance(self.value, list):
+            json["value"] = [item.to_json() for item in self.value]
+        else:
+            json["value"] = self.value
+
+        json["enabled"] = self.enabled
+        return json
 
     @property
     def flag_name(self) -> str:
@@ -133,15 +146,26 @@ class Config:
         json = Json.loads(filepath.read_text())
 
         browser_path_dict = json.get("browser_path", {})
-        if browser_path_dict:
-            if Os.is_win():
-                self.browser_path: Path = Path(browser_path_dict.get("win", ""))
-            elif Os.is_lin():
-                self.browser_path: Path = Path(browser_path_dict.get("lin", ""))
+        # We need to keep both to save in the config later if needed
+        self.win_browser_path: str = browser_path_dict.get("win", "")
+        self.lin_browser_path: str = browser_path_dict.get("lin", "")
+        if Os.is_win():
+            self.browser_path: Path = Path(self.win_browser_path)
+        elif Os.is_lin():
+            self.browser_path: Path = Path(self.lin_browser_path)
         else:
             assert False, "browser_path must be specified in config"
 
         self.args: list[Arg] = [Arg.from_json(arg_data) for arg_data in json.get("args", [])]
+
+    def save(self) -> None:
+        json: dict = {}
+        json["browser_path"] = {
+            "win": self.win_browser_path,
+            "lin": self.lin_browser_path,
+        }
+        json["args"] = [arg.to_json() for arg in self.args]
+        self.path.write_text(Json.dumps(json, indent=4) + "\n", newline='\n')
 
     @classmethod
     def load_configs(cls, config_dir: Path) -> list[Self]:
@@ -204,6 +228,7 @@ class App:
         configs = Config.load_configs(config_dir)
         if configs:
             print(f"Loaded configuration: {configs[0].path}")
+            configs[0].save()  # Save to ensure any defaults are written
             return configs[0]
 
         print("No configuration files found. Exiting.")
@@ -316,6 +341,7 @@ class App:
                 item = self.config.find_arg_list_item(arg_list_item_name)
                 if item is not None:
                     item.enabled = values[event]
+                    self.config.save()
 
             elif event.endswith(checkbox_suffix):
                 # Cut off the suffix to get the arg name
@@ -323,10 +349,12 @@ class App:
                 arg = self.config.find_arg(arg_name)
                 if arg is not None:
                     arg.enabled = values[event]
+                    self.config.save()
 
             elif event.endswith(input_suffix):
                 arg_name = event.replace(input_suffix, "", -1)
                 self.config.set_value(arg_name, values[event])
+                self.config.save()
 
             self._update_run_command_display()
 
