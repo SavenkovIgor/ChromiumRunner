@@ -8,27 +8,25 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 <!-- [![Platform](https://img.shields.io/badge/Platform-Windows-blue)](https://github.com/SavenkovIgor/ChromiumRunner) -->
 
-![ChromiumRunner Screenshot](resources/app.png)
-
 </div>
 
 ## What it does
 
-Launch Chrome, Edge, Brave, or other Chromium browsers with specific flags and
-arguments without typing long command lines every time.
+Launch Chromium-based browsers with specific flags and arguments — no need to type long command lines every time.
 
-Under the hood, it takes a JSON config file defining the browser path and arguments
-and generates a GUI for this argument list with checkboxes, text inputs, and stuff.
+Under the hood, it uses a JSON configuration file that defines the browser path and arguments and generates a GUI with checkboxes, text inputs, and other controls.
 
 ### Features
 
 - ✅ Enable/disable browser flags with checkboxes
 - 📝 Support for flags, strings, numbers, and list arguments
-- 💾 Settings saved in JSON config files
-- 🔧 Environment variables (`${env:VAR}`) and timestamps (`${tool:timestamp}`)
-- 👁️ Preview the full command before running
+- 💾 Settings are saved in JSON config files
+- 🔧 Support for environment variables (`${env:VAR}`) and timestamps (`${tool:timestamp}`)
+- 👁️ Preview the full command before running it
 
-### Setup and Running
+![ChromiumRunner Screenshot](resources/app.png)
+
+### Setup & Running
 
 With source code:
 
@@ -37,7 +35,7 @@ With source code:
 git clone https://github.com/SavenkovIgor/ChromiumRunner.git
 cd ChromiumRunner
 
-# And run the application directly:
+# Run the application directly:
 ./main.py
 
 # Or using UV:
@@ -83,9 +81,9 @@ Configuration files are JSON files in the application directory.
 
 ### Value Interpolation
 
-Dynamic values supported:
+Supported dynamic values:
 
-- **Environment Variables**: `${env:VARIABLE_NAME}`
+- **Environment variables**: `${env:VARIABLE_NAME}`
 - **Timestamp**: `${tool:timestamp}` (format: `YYYY-MM-DD_HH-MM-SS`)
 - **Escaping**: Use `\${...}` for literal text
 
@@ -99,12 +97,12 @@ Dynamic values supported:
 }
 ```
 
-## 🛠️ Tech Stack
+## 🛠️ Tech stack
 
 - Python 3.14
-- [UV](https://github.com/astral-sh/uv) for dependency management
-- [FreeSimpleGUI](https://github.com/spyoungtech/FreeSimpleGUI)
-- PyInstaller for building
+- [UV](https://github.com/astral-sh/uv) for dependency management and running the app
+- [FreeSimpleGUI](https://github.com/spyoungtech/FreeSimpleGUI) for the UI
+- PyInstaller for bundling into an executable
 
 ## 📦 Building
 
@@ -112,4 +110,4 @@ Dynamic values supported:
 ./build.py
 ```
 
-Output: `dist/ChromiumRunner.exe`
+Build output: `dist/ChromiumRunner.exe`
