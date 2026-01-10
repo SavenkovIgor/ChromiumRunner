@@ -5,14 +5,14 @@
             "name": "user-data-dir",
             "description": "Path to the user data dir",
             "type": "string",
-            "value": "",
+            "value": "${env:HOME}\\Desktop\\User Data",
             "enabled": true
         },
         {
             "name": "log-file",
             "description": "Path to the log file",
             "type": "string",
-            "value": "",
+            "value": "${env:HOME}\\Desktop\\Chromium.log",
             "enabled": true
         },
         {

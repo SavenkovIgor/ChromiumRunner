@@ -2,6 +2,8 @@
 
 import argparse
 import json as Json
+import os
+import re
 import subprocess
 import sys
 import tkinter as tk
@@ -58,6 +60,36 @@ class UiContext:
         except Exception:
             print("Failed to set UI scaling")
             pass
+
+
+class ValueInterpolator:
+    """
+    Simple interpolator for `${env:NAME}` patterns with escaping support.
+    Only supports the `env:` provider and prints an error when an env var is missing.
+    """
+
+    def interpolate_string(self, s: str) -> str:
+        pattern = re.compile(r'(\\)?\$\{([^}]+)\}')
+
+        def repl(m):
+            ENV_PREFIX = "env:"
+            # If escaped with backslash (group 1), return the literal without the backslash.
+            if m.group(1):
+                return "${" + m.group(2) + "}"
+
+            inner = m.group(2)
+            if inner.startswith(ENV_PREFIX):
+                name = inner[len(ENV_PREFIX) :]
+                val = os.environ.get(name)
+                if val is None:
+                    print(f"Missing env var: {name}")
+                    return f'${{{inner}}}'
+                return val
+
+            # Unknown provider; leave placeholder unchanged.
+            return f'${{{inner}}}'
+
+        return pattern.sub(repl, s)
 
 
 class ArgType(Enum):
@@ -155,7 +187,11 @@ class Config:
     def run_browser_command(self) -> list[str]:
         args: list[str] = [str(self.browser_path)]
         # Add enabled arguments
-        args.extend([str(arg) for arg in self.args if arg.enabled])
+        interpolator = ValueInterpolator()
+        for arg in self.args:
+            if not arg.enabled:
+                continue
+            args.append(interpolator.interpolate_string(str(arg)))
         return args
 
     def decorated_run_browser_command(self) -> str:
@@ -259,7 +295,9 @@ class App:
                 text = f'{item.value}'
                 item_row: list[Element] = []
                 item_row.append(App.h_spacer())
-                item_row.append(Checkbox(key=key, text=text, default=item.enabled, enable_events=True))
+                item_row.append(
+                    Checkbox(key=key, text=text, default=item.enabled, enable_events=True)
+                )
                 ret.append(item_row)
         else:
             input_field = App.create_arg_input(arg)
