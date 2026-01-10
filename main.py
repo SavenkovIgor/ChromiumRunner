@@ -11,6 +11,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
+from platform import system
 from typing import Callable, Self
 
 from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, Frame,
@@ -40,15 +41,6 @@ class AppContext:
 
 class UiContext:
     @staticmethod
-    def app_scaling() -> float:
-        # fmt: off
-        match sys.platform:
-            case 'win32': return 1.5
-            case 'linux': return 3.0
-            case _: return 1.0
-        # fmt: on
-
-    @staticmethod
     def init_app_scaling() -> None:
         # Init the tk scaling
         try:
@@ -58,10 +50,10 @@ class UiContext:
             print(f'  pixels per inch: {root.winfo_fpixels("1i")}')
             print(f'  current scaling: {root.tk.call("tk", "scaling")}')
 
-            root.tk.call('tk', 'scaling', UiContext.app_scaling())
+            scale: float = {'Windows': 1.5, 'Linux': 3.0}.get(system(), 1.0)
+            root.tk.call('tk', 'scaling', scale)
         except Exception:
             print('Failed to set UI scaling')
-            pass
 
 
 class ValueInterpolator:
