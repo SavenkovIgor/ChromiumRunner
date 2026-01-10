@@ -6,7 +6,7 @@
         {
             "label": "Run",
             "type": "shell",
-            "command": "${workspaceFolder}/main.py",
+            "command": "./main.py",
             "problemMatcher": [
                 "$python"
             ]
@@ -14,7 +14,7 @@
         {
             "label": "Build",
             "type": "shell",
-            "command": "${workspaceFolder}/build.py",
+            "command": "./build.py",
             "problemMatcher": [
                 "$python"
             ]
