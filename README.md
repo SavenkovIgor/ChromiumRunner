@@ -1,41 +1,119 @@
-# ChromiumRunner
+# 🚀 ChromiumRunner
 
-Simple GUI for running Chromium-based browsers with custom command-line arguments.
+<div align="center">
 
-## Tech Stack
+**A tool for launching Chromium-based browsers with dynamic GUI and custom command-line arguments**
 
-- **Language**: Python
-- **GUI Library**: [FreeSimpleGUI](https://github.com/spyoungtech/FreeSimpleGUI) (fork of PySimpleGUI)
-- **Dependency Manager**: [UV](https://github.com/astral-sh/uv)
-- **Config**: JSON
-- **Builds**: `.exe` (Windows), `.dmg` (macOS), `.AppImage` (Linux)
+[![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<!-- [![Platform](https://img.shields.io/badge/Platform-Windows-blue)](https://github.com/SavenkovIgor/ChromiumRunner) -->
 
-## Installation
+![ChromiumRunner Screenshot](resources/app.png)
 
-1. Install UV (if not already installed):
+</div>
+
+## What it does
+
+Launch Chrome, Edge, Brave, or other Chromium browsers with specific flags and
+arguments without typing long command lines every time.
+
+Under the hood, it takes a JSON config file defining the browser path and arguments
+and generates a GUI for this argument list with checkboxes, text inputs, and stuff.
+
+### Features
+
+- ✅ Enable/disable browser flags with checkboxes
+- 📝 Support for flags, strings, numbers, and list arguments
+- 💾 Settings saved in JSON config files
+- 🔧 Environment variables (`${env:VAR}`) and timestamps (`${tool:timestamp}`)
+- 👁️ Preview the full command before running
+
+### Setup and Running
+
+With source code:
+
 ```bash
-pip install uv
+# Clone the repository
+git clone https://github.com/SavenkovIgor/ChromiumRunner.git
+cd ChromiumRunner
+
+# And run the application directly:
+./main.py
+
+# Or using UV:
+uv run main.py
 ```
 
-2. Install dependencies:
-```bash
-uv sync
+## ⚙️ Configuration
+
+Configuration files are JSON files in the application directory.
+
+### Config File Example
+
+```json
+{
+  "browser_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "args": [
+    {
+        "name": "enable-logging",
+        "description": "Enable logging",
+        "type": "flag",
+        "value": null,
+        "enabled": true
+    },
+    {
+      "name": "log-file",
+      "description": "Path to the log file",
+      "type": "string",
+      "value": "${env:HOME}\\Desktop\\Chromium_${tool:timestamp}.log",
+      "enabled": true
+    }
+  ]
+}
 ```
 
-## Running the Application
+### Argument Types
 
-Run the application using UV:
-```bash
-uv run python main.py
+| Type | Description | Example |
+| ---- | ----------- | ------- |
+| `flag` | Simple boolean flag | `--disable-web-security` |
+| `string` | Text value | `--user-data-dir="/path/to/profile"` |
+| `number` | Numeric value | `--window-size=1920` |
+| `list` | Comma-separated values | `--enable-features="WebGPU,Feature2"` |
+
+### Value Interpolation
+
+Dynamic values supported:
+
+- **Environment Variables**: `${env:VARIABLE_NAME}`
+- **Timestamp**: `${tool:timestamp}` (format: `YYYY-MM-DD_HH-MM-SS`)
+- **Escaping**: Use `\${...}` for literal text
+
+**Example:**
+
+```json
+{
+  "name": "user-data-dir",
+  "type": "string",
+  "value": "${env:TEMP}\\chrome-${tool:timestamp}"
+}
 ```
 
-Or activate the virtual environment and run directly:
+## 🛠️ Tech Stack
+
+- Python 3.14
+- [UV](https://github.com/astral-sh/uv) for dependency management
+- [FreeSimpleGUI](https://github.com/spyoungtech/FreeSimpleGUI)
+- PyInstaller for building
+
+## 📦 Building
+
 ```bash
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-python main.py
+./build.py
 ```
 
-## Requirements
+Output: `dist/ChromiumRunner.exe`
 
-- Python 3.12 or higher
-- tkinter (usually comes with Python, but on Linux you may need to install `python3-tk`)
+## License
+
+MIT License - see [LICENSE](LICENSE) file.
