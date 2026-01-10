@@ -5,8 +5,15 @@
             "name": "user-data-dir",
             "description": "Path to the user data dir",
             "type": "string",
-            "value": "/tmp/chromium-profile",
-            "enabled": false
+            "value": "",
+            "enabled": true
+        },
+        {
+            "name": "log-file",
+            "description": "Path to the log file",
+            "type": "string",
+            "value": "",
+            "enabled": true
         },
         {
             "name": "enable-logging",
@@ -26,8 +33,8 @@
             "name": "window-size",
             "description": "Sets the initial window size. Format: WIDTH,HEIGHT",
             "type": "string",
-            "value": "1920,1080",
-            "enabled": false
+            "value": "600,400",
+            "enabled": true
         },
         {
             "name": "vmodule",
