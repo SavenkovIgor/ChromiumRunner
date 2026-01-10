@@ -144,26 +144,15 @@ class Config:
     def __init__(self, filepath: Path):
         self.path: Path = filepath
         json = Json.loads(filepath.read_text())
-
-        browser_path_dict = json.get("browser_path", {})
-        # We need to keep both to save in the config later if needed
-        self.win_browser_path: str = browser_path_dict.get("win", "")
-        self.lin_browser_path: str = browser_path_dict.get("lin", "")
-        if Os.is_win():
-            self.browser_path: Path = Path(self.win_browser_path)
-        elif Os.is_lin():
-            self.browser_path: Path = Path(self.lin_browser_path)
-        else:
-            assert False, "browser_path must be specified in config"
+        self.browser_path = Path(json.get("browser_path", ""))
+        if not self.browser_path.exists():
+            raise FileNotFoundError(f"No browser found at path: {self.browser_path}")
 
         self.args: list[Arg] = [Arg.from_json(arg_data) for arg_data in json.get("args", [])]
 
     def save(self) -> None:
         json: dict = {}
-        json["browser_path"] = {
-            "win": self.win_browser_path,
-            "lin": self.lin_browser_path,
-        }
+        json["browser_path"] = str(self.browser_path)
         json["args"] = [arg.to_json() for arg in self.args]
         self.path.write_text(Json.dumps(json, indent=4) + "\n", newline='\n')
 

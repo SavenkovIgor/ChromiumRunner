@@ -1,8 +1,5 @@
 {
-    "browser_path": {
-        "win": "C:/Program Files/Google/Chrome/Application/chrome.exe",
-        "lin": "/snap/bin/chromium"
-    },
+    "browser_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "args": [
         {
             "name": "user-data-dir",
