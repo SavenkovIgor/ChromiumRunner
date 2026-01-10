@@ -9,17 +9,17 @@
             "enabled": true
         },
         {
-            "name": "log-file",
-            "description": "Log file path",
-            "type": "string",
-            "value": "${env:HOME}\\Desktop\\Chromium_${tool:timestamp}.log",
-            "enabled": true
-        },
-        {
             "name": "enable-logging",
             "description": "Enable logging",
             "type": "flag",
             "value": null,
+            "enabled": true
+        },
+        {
+            "name": "log-file",
+            "description": "Log file path",
+            "type": "string",
+            "value": "${env:HOME}\\Desktop\\Chromium_${tool:timestamp}.log",
             "enabled": true
         },
         {

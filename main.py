@@ -20,6 +20,45 @@ from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, Frame,
 # Set a theme for the GUI
 theme("dark grey 8")
 
+# If no config file exists, this default will be written to disk
+DEFAULT_CONFIG: dict = {
+    "browser_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "args": [
+        {
+            "name": "user-data-dir",
+            "description": "User data directory path",
+            "type": "string",
+            "value": "${env:HOME}\\Desktop\\User Data",
+            "enabled": True,
+        },
+        {
+            "name": "enable-logging",
+            "description": "Enable logging",
+            "type": "flag",
+            "value": None,
+            "enabled": True,
+        },
+        {
+            "name": "log-file",
+            "description": "Log file path",
+            "type": "string",
+            "value": "${env:HOME}\\Desktop\\Chromium_${tool:timestamp}.log",
+            "enabled": True,
+        },
+        {
+            "name": "vmodule",
+            "description": "Modules log verbosity (module=level,...)",
+            "type": "list",
+            "value": [
+                {"enabled": True, "value": "net=2"},
+                {"enabled": False, "value": "gpu=1"},
+                {"enabled": True, "value": "renderer=3"},
+            ],
+            "enabled": True,
+        },
+    ],
+}
+
 
 class AppContext:
     @staticmethod
@@ -172,9 +211,28 @@ class Config:
         json['args'] = [arg.to_json() for arg in self.args]
         self.path.write_text(Json.dumps(json, indent=4) + '\n', newline='\n')
 
+    @staticmethod
+    def create_default_config(config_dir: Path) -> Path:
+        """
+        Create a default configuration file in `config_dir` if one does not already exist.
+        Returns the path to the default config file.
+        """
+        filepath = config_dir / 'chromium.config.json'
+        if filepath.exists():
+            return filepath
+
+        filepath.write_text(Json.dumps(DEFAULT_CONFIG, indent=4) + '\n', newline='\n')
+        print(f'Default config created at: {filepath}')
+        return filepath
+
     @classmethod
     def load_configs(cls, config_dir: Path) -> list[Self]:
         config_files: list[Path] = sorted(config_dir.glob('*.config.json'))
+        if not config_files:
+            # No configs found — create a default one and reload
+            path = Config.create_default_config(config_dir)
+            config_files = [path]
+
         return [cls(filepath) for filepath in config_files]
 
     def run_browser_command(self) -> list[str]:
