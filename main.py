@@ -216,8 +216,9 @@ class App:
 
     def _run_browser(self) -> None:
         command = self.config.run_browser_command()
-        print(f'Running browser: {" ".join(command)}')
-        subprocess.Popen(command, shell=True)
+        command_str = ' '.join(command)
+        print(f'Running browser: {command_str}')
+        subprocess.Popen(command_str)
 
     def _update_run_command_display(self) -> None:
         if self.window is not None and self.config is not None:
