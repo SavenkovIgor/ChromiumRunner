@@ -3,42 +3,42 @@
     "args": [
         {
             "name": "user-data-dir",
-            "description": "Path to the user data dir",
+            "description": "User data directory path",
             "type": "string",
             "value": "${env:HOME}\\Desktop\\User Data",
             "enabled": true
         },
         {
             "name": "log-file",
-            "description": "Path to the log file",
+            "description": "Log file path",
             "type": "string",
             "value": "${env:HOME}\\Desktop\\Chromium_${tool:timestamp}.log",
             "enabled": true
         },
         {
             "name": "enable-logging",
-            "description": "Enables logging for all process types.",
+            "description": "Enable logging",
             "type": "flag",
             "value": null,
             "enabled": true
         },
         {
             "name": "v",
-            "description": "Sets the logging verbosity level (0-3).",
+            "description": "Logging verbosity level (0-3)",
             "type": "number",
             "value": 1,
             "enabled": false
         },
         {
             "name": "window-size",
-            "description": "Sets the initial window size. Format: WIDTH,HEIGHT",
+            "description": "Initial window size (WIDTH,HEIGHT)",
             "type": "string",
             "value": "600,400",
             "enabled": false
         },
         {
             "name": "vmodule",
-            "description": "Specifies which modules to log.",
+            "description": "Modules log verbosity (module=level,...)",
             "type": "list",
             "value": [
                 {
