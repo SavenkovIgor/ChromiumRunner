@@ -113,7 +113,3 @@ Dynamic values supported:
 ```
 
 Output: `dist/ChromiumRunner.exe`
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file.
