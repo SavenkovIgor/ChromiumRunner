@@ -14,7 +14,7 @@ from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element,
                            HorizontalSeparator, Input, Text, Window, theme)
 
 # Set a theme for the GUI
-theme("dark grey 9")
+theme("dark grey 8")
 
 
 class AppContext:
@@ -231,7 +231,7 @@ class App:
     @staticmethod
     def create_arg_checkbox(arg: Arg) -> Checkbox:
         key = f"{arg.name}_checkbox"
-        label = f"{arg.flag_name} ({arg.description})"
+        label = f"{arg.flag_name}    [{arg.description}]"
         return Checkbox(key=key, text=label, default=arg.enabled, enable_events=True)
 
     @staticmethod
@@ -263,33 +263,31 @@ class App:
 
         input_field = App.create_arg_input(arg)
         if input_field is not None:
-            ret.append([App.h_spacer(), input_field])
+            ret.append([App.h_spacer(), Text("Value:"), input_field])
         return ret
 
     def _create_main_window(self) -> Window:
         assert self.config is not None, "Config must be loaded before creating the window"
         layout: list[list[Element]] = []
-        app_description = (
-            "\nA simple app to run Chromium-based browsers with custom command-line arguments.\n"
-        )
+        app_description = 'Run Chromium with custom arguments'
         layout.append([Text(app_description, font=("Any", 12))])
         layout.append([HorizontalSeparator()])
 
         # Browser path
         bp_row: list[Element] = []
         bp_row.append(Text("Browser Path:"))
-        bp_row.append(Input(default_text=str(self.config.browser_path)))
+        bp_row.append(Input(default_text=str(self.config.browser_path), size=(60, 1)))
         layout.append(bp_row)
 
         # Arguments
         layout.append([HorizontalSeparator()])
-        layout.append([Text("Command-line arguments:")])
+        layout.append([Text("Command-Line Arguments:")])
         for arg in self.config.args:
             layout.extend(self._create_layout_for_arg(arg))
 
         # Resulting command
         layout.append([HorizontalSeparator()])
-        layout.append([Text("Run Command:")])
+        layout.append([Text("Result Command:")])
         layout.append([self.command_output])
 
         # Run button
