@@ -17,16 +17,6 @@ from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element,
 theme("dark grey 9")
 
 
-class Os:
-    @staticmethod
-    def is_win() -> bool:
-        return sys.platform.startswith("win")
-
-    @staticmethod
-    def is_lin() -> bool:
-        return sys.platform.startswith("linux")
-
-
 class AppContext:
     @staticmethod
     def script_dir() -> Path:
@@ -46,10 +36,10 @@ class AppContext:
 class UiContext:
     @staticmethod
     def app_scaling() -> float:
-        if Os.is_win():
+        if sys.platform.startswith('win'):
             return 1.5
 
-        if Os.is_lin():
+        if sys.platform.startswith('linux'):
             return 3.0
 
         return 1.0
@@ -66,6 +56,7 @@ class UiContext:
 
             root.tk.call("tk", "scaling", UiContext.app_scaling())
         except Exception:
+            print("Failed to set UI scaling")
             pass
 
 
