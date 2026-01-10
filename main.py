@@ -10,7 +10,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Callable, Self
 
-from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element,
+from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, Frame,
                            HorizontalSeparator, Input, Text, Window, theme)
 
 # Set a theme for the GUI
@@ -231,8 +231,7 @@ class App:
     @staticmethod
     def create_arg_checkbox(arg: Arg) -> Checkbox:
         key = f"{arg.name}_checkbox"
-        label = f"{arg.flag_name}    [{arg.description}]"
-        return Checkbox(key=key, text=label, default=arg.enabled, enable_events=True)
+        return Checkbox(key=key, text=arg.flag_name, default=arg.enabled, enable_events=True)
 
     @staticmethod
     def create_arg_input(arg: Arg) -> Input | None:
@@ -248,23 +247,26 @@ class App:
     def _create_layout_for_arg(arg: Arg) -> list[list[Element]]:
         ret: list[list[Element]] = []
         # Base checkbox to enable/disable the argument
-        ret.append([App.create_arg_checkbox(arg)])
+        row: list[Element] = []
+        row.append(App.create_arg_checkbox(arg))
+        ret.append(row)
 
         if arg.type == ArgType.LIST:
             assert isinstance(arg.value, list)
             for item in arg.value:
                 key = f'{arg.name}_{item.value}_list_checkbox'
                 text = f'{item.value}'
-                row: list[Element] = []
-                row.append(App.h_spacer())
-                row.append(Checkbox(key=key, text=text, default=item.enabled, enable_events=True))
-                ret.append(row)
-            return ret
+                item_row: list[Element] = []
+                item_row.append(App.h_spacer())
+                item_row.append(Checkbox(key=key, text=text, default=item.enabled, enable_events=True))
+                ret.append(item_row)
+        else:
+            input_field = App.create_arg_input(arg)
+            if input_field is not None:
+                row.append(input_field)
 
-        input_field = App.create_arg_input(arg)
-        if input_field is not None:
-            ret.append([App.h_spacer(), Text("Value:"), input_field])
-        return ret
+        # Wrap everything in a frame
+        return [[Frame(arg.description, ret, expand_x=True)]]
 
     def _create_main_window(self) -> Window:
         assert self.config is not None, "Config must be loaded before creating the window"
