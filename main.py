@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tkinter as tk
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Callable, Self
 
@@ -69,7 +70,7 @@ class UiContext:
 
 
 # Types
-class ArgType:
+class ArgType(Enum):
     FLAG = "flag"
     STRING = "string"
     NUMBER = "number"
@@ -94,8 +95,9 @@ class Arg:
     def from_dict(cls, data: dict) -> Self:
         """Create an Arg instance from a dictionary."""
         # Convert list items to ArgListItem instances if type is LIST
-        if data.get("type") == ArgType.LIST:
-            data = data.copy()
+        data = data.copy()
+        data["type"] = ArgType(data["type"])
+        if data["type"] == ArgType.LIST:
             data["value"] = [ArgListItem(**item) for item in data["value"]]
         return cls(**data)
 
