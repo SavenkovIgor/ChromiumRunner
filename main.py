@@ -342,13 +342,10 @@ class App:
 
 
 def main(args: argparse.Namespace) -> None:
+    UiContext.init_app_scaling()
     App().run_event_loop()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-
-    UiContext.init_app_scaling()
-
-    main(args)
+    main(parser.parse_args())
