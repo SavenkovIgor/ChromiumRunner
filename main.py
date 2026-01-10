@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 import tkinter as tk
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
@@ -116,9 +116,6 @@ class ArgListItem:
     enabled: bool
     value: str
 
-    def to_json(self) -> dict:
-        return {"enabled": self.enabled, "value": self.value}
-
 
 @dataclass
 class Arg:
@@ -142,7 +139,7 @@ class Arg:
         json["description"] = self.description
         json["type"] = self.type.value
         if self.type == ArgType.LIST and isinstance(self.value, list):
-            json["value"] = [item.to_json() for item in self.value]
+            json["value"] = [asdict(item) for item in self.value]
         else:
             json["value"] = self.value
 
