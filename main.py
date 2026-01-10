@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 
 import argparse
-import json
+import json as Json
 import subprocess
 import sys
 import tkinter as tk
@@ -92,14 +92,14 @@ class Arg:
     enabled: bool = True
 
     @classmethod
-    def from_dict(cls, data: dict) -> Self:
+    def from_json(cls, json: dict) -> Self:
         """Create an Arg instance from a dictionary."""
         # Convert list items to ArgListItem instances if type is LIST
-        data = data.copy()
-        data["type"] = ArgType(data["type"])
-        if data["type"] == ArgType.LIST:
-            data["value"] = [ArgListItem(**item) for item in data["value"]]
-        return cls(**data)
+        json = json.copy()
+        json["type"] = ArgType(json["type"])
+        if json["type"] == ArgType.LIST:
+            json["value"] = [ArgListItem(**item) for item in json["value"]]
+        return cls(**json)
 
     @property
     def flag_name(self) -> str:
@@ -130,9 +130,9 @@ class Arg:
 class Config:
     def __init__(self, filepath: Path):
         self.path: Path = filepath
-        json_data = json.loads(filepath.read_text())
+        json = Json.loads(filepath.read_text())
 
-        browser_path_dict = json_data.get("browser_path", {})
+        browser_path_dict = json.get("browser_path", {})
         if browser_path_dict:
             if Os.is_win():
                 self.browser_path: Path = Path(browser_path_dict.get("win", ""))
@@ -141,7 +141,7 @@ class Config:
         else:
             assert False, "browser_path must be specified in config"
 
-        self.args: list[Arg] = [Arg.from_dict(arg_data) for arg_data in json_data.get("args", [])]
+        self.args: list[Arg] = [Arg.from_json(arg_data) for arg_data in json.get("args", [])]
 
     @classmethod
     def load_configs(cls, config_dir: Path) -> list[Self]:
