@@ -151,25 +151,18 @@ class Arg:
         return f"--{self.name}"
 
     def __str__(self) -> str:
-        if self.type == ArgType.STRING:
-            assert self.value is not None
-            return f'{self.flag_name}="{self.value}"'
+        match self.type:
+            case ArgType.FLAG:
+                return self.flag_name
+            case ArgType.STRING:
+                return f'{self.flag_name}="{self.value}"'
+            case ArgType.NUMBER:
+                return f'{self.flag_name}={self.value}'
 
-        if self.type == ArgType.FLAG:
-            assert self.value is None
-            return self.flag_name
-
-        if self.type == ArgType.NUMBER:
-            assert self.value is not None
-            return f'{self.flag_name}={self.value}'
-
-        if self.type == ArgType.LIST:
-            assert isinstance(self.value, list)
-            enabled_items = [item.value for item in self.value if item.enabled]
-            joined_items = ','.join(enabled_items)
-            return f'{self.flag_name}="{joined_items}"'
-
-        raise ValueError(f"Unknown Arg type: {self.type}")
+            case ArgType.LIST:
+                assert isinstance(self.value, list)
+                enabled_items = [item.value for item in self.value if item.enabled]
+                return f'{self.flag_name}="{','.join(enabled_items)}"'
 
 
 class Config:
