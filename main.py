@@ -23,12 +23,14 @@ theme("dark grey 8")
 class AppContext:
     @staticmethod
     def script_dir() -> Path:
-        """Get the dir where the script or binary is located.
+        """
+        Get the dir where the script or binary is located.
 
         When frozen (PyInstaller), this returns the directory containing the executable.
         When running from source, it returns the directory containing this script.
         """
-        script_dir: str = sys.executable if getattr(sys, "frozen", False) else sys.argv[0]
+
+        script_dir: str = sys.executable if getattr(sys, 'frozen', False) else sys.argv[0]
         return Path(script_dir).resolve().parent
 
     @staticmethod
@@ -39,13 +41,12 @@ class AppContext:
 class UiContext:
     @staticmethod
     def app_scaling() -> float:
-        if sys.platform.startswith('win'):
-            return 1.5
-
-        if sys.platform.startswith('linux'):
-            return 3.0
-
-        return 1.0
+        # fmt: off
+        match sys.platform:
+            case 'win32': return 1.5
+            case 'linux': return 3.0
+            case _: return 1.0
+        # fmt: on
 
     @staticmethod
     def init_app_scaling() -> None:
@@ -53,13 +54,13 @@ class UiContext:
         try:
             root = tk.Tk()
             root.withdraw()
-            print(f"window info:")
-            print(f"  pixels per inch: {root.winfo_fpixels('1i')}")
-            print(f"  current scaling: {root.tk.call('tk', 'scaling')}")
+            print(f'window info:')
+            print(f'  pixels per inch: {root.winfo_fpixels("1i")}')
+            print(f'  current scaling: {root.tk.call("tk", "scaling")}')
 
-            root.tk.call("tk", "scaling", UiContext.app_scaling())
+            root.tk.call('tk', 'scaling', UiContext.app_scaling())
         except Exception:
-            print("Failed to set UI scaling")
+            print('Failed to set UI scaling')
             pass
 
 
@@ -71,18 +72,17 @@ class ValueInterpolator:
 
     def timestamp(self) -> str:
         """Return current UTC timestamp in a filename-safe format (e.g. 2026-01-11_12-34-56)."""
-        # Use UTC and produce a hyphenated filename-safe timestamp: YYYY-MM-DD_HH-MM-SS
         return datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
 
     def interpolate_string(self, s: str) -> str:
         pattern = re.compile(r'(\\)?\$\{([^}]+)\}')
 
         def repl(m):
-            ENV_PREFIX = "env:"
-            TOOL_PREFIX = "tool:"
+            ENV_PREFIX = 'env:'
+            TOOL_PREFIX = 'tool:'
             # If escaped with backslash (group 1), return the literal without the backslash.
             if m.group(1):
-                return "${" + m.group(2) + "}"
+                return '${' + m.group(2) + '}'
 
             inner = m.group(2)
             if inner.startswith(ENV_PREFIX):
@@ -91,24 +91,24 @@ class ValueInterpolator:
                 if val is not None:
                     return val
                 else:
-                    print(f"Missing env var: {name}")
+                    print(f'Missing env var: {name}')
 
             if inner.startswith(TOOL_PREFIX):
                 name = inner[len(TOOL_PREFIX) :]
-                if name == "timestamp":
+                if name == 'timestamp':
                     return self.timestamp()
 
             # Unknown provider; leave placeholder unchanged.
-            return f'${{{inner}}}'
+            return '${' + inner + '}'
 
         return pattern.sub(repl, s)
 
 
 class ArgType(Enum):
-    FLAG = "flag"
-    STRING = "string"
-    NUMBER = "number"
-    LIST = "list"
+    FLAG = 'flag'
+    STRING = 'string'
+    NUMBER = 'number'
+    LIST = 'list'
 
 
 @dataclass
@@ -128,36 +128,35 @@ class Arg:
     @classmethod
     def from_json(cls, json: dict) -> Self:
         json = json.copy()
-        json["type"] = ArgType(json["type"])
-        if json["type"] == ArgType.LIST:
-            json["value"] = [ArgListItem(**item) for item in json["value"]]
+        json['type'] = ArgType(json['type'])
+        if json['type'] == ArgType.LIST:
+            json['value'] = [ArgListItem(**item) for item in json['value']]
         return cls(**json)
 
     def to_json(self) -> dict:
         json: dict = {}
-        json["name"] = self.name
-        json["description"] = self.description
-        json["type"] = self.type.value
+        json['name'] = self.name
+        json['description'] = self.description
+        json['type'] = self.type.value
         if self.type == ArgType.LIST and isinstance(self.value, list):
-            json["value"] = [asdict(item) for item in self.value]
+            json['value'] = [asdict(item) for item in self.value]
         else:
-            json["value"] = self.value
+            json['value'] = self.value
 
-        json["enabled"] = self.enabled
+        json['enabled'] = self.enabled
         return json
 
     @property
     def flag_name(self) -> str:
-        return f"--{self.name}"
+        return f'--{self.name}'
 
     def __str__(self) -> str:
         match self.type:
-            case ArgType.FLAG:
-                return self.flag_name
-            case ArgType.STRING:
-                return f'{self.flag_name}="{self.value}"'
-            case ArgType.NUMBER:
-                return f'{self.flag_name}={self.value}'
+            # fmt: off
+            case ArgType.FLAG:   return self.flag_name
+            case ArgType.STRING: return f'{self.flag_name}="{self.value}"'
+            case ArgType.NUMBER: return f'{self.flag_name}={self.value}'
+            # fmt: on
 
             case ArgType.LIST:
                 assert isinstance(self.value, list)
@@ -169,21 +168,21 @@ class Config:
     def __init__(self, filepath: Path):
         self.path: Path = filepath
         json = Json.loads(filepath.read_text())
-        self.browser_path = Path(json.get("browser_path", ""))
+        self.browser_path = Path(json.get('browser_path', ''))
         if not self.browser_path.exists():
-            raise FileNotFoundError(f"No browser found at path: {self.browser_path}")
+            raise FileNotFoundError(f'No browser found at path: {self.browser_path}')
 
-        self.args: list[Arg] = [Arg.from_json(arg_data) for arg_data in json.get("args", [])]
+        self.args: list[Arg] = [Arg.from_json(arg_data) for arg_data in json.get('args', [])]
 
     def save(self) -> None:
         json: dict = {}
-        json["browser_path"] = str(self.browser_path)
-        json["args"] = [arg.to_json() for arg in self.args]
-        self.path.write_text(Json.dumps(json, indent=4) + "\n", newline='\n')
+        json['browser_path'] = str(self.browser_path)
+        json['args'] = [arg.to_json() for arg in self.args]
+        self.path.write_text(Json.dumps(json, indent=4) + '\n', newline='\n')
 
     @classmethod
     def load_configs(cls, config_dir: Path) -> list[Self]:
-        config_files: list[Path] = sorted(config_dir.glob(f"*.config.json"))
+        config_files: list[Path] = sorted(config_dir.glob('*.config.json'))
         return [cls(filepath) for filepath in config_files]
 
     def run_browser_command(self) -> list[str]:
@@ -215,7 +214,7 @@ class Config:
 
     def set_value(self, arg_name: str, value: str) -> None:
         arg = self.find_arg(arg_name)
-        assert arg is not None, f"Argument with name '{arg_name}' not found in config"
+        assert arg is not None, f'Argument with name "{arg_name}" not found in config'
         if arg.type == ArgType.STRING:
             assert isinstance(value, str)
             arg.value = value
@@ -226,14 +225,14 @@ class Config:
                 arg.value = 0
         elif arg.type == ArgType.LIST:
             # For simplicity, assume comma-separated values
-            items = value.split(",")
+            items = value.split(',')
             arg.value = [ArgListItem(enabled=True, value=item.strip()) for item in items]
 
 
 class App:
     def __init__(self) -> None:
         first_config = self._load_first_config()
-        assert first_config is not None, "Failed to load any configuration"
+        assert first_config is not None, 'Failed to load any configuration'
         self.config = first_config
 
         # UI elements
@@ -245,11 +244,11 @@ class App:
         config_dir = AppContext.config_dir()
         configs = Config.load_configs(config_dir)
         if configs:
-            print(f"Loaded configuration: {configs[0].path}")
+            print(f'Loaded configuration: {configs[0].path}')
             configs[0].save()  # Save to ensure any defaults are written
             return configs[0]
 
-        print("No configuration files found. Exiting.")
+        print('No configuration files found. Exiting.')
         return None
 
     def _run_browser(self) -> None:
@@ -269,7 +268,7 @@ class App:
 
     @staticmethod
     def create_arg_checkbox(arg: Arg) -> Checkbox:
-        key = f"{arg.name}_checkbox"
+        key = f'{arg.name}_checkbox'
         return Checkbox(key=key, text=arg.flag_name, default=arg.enabled, enable_events=True)
 
     @staticmethod
@@ -278,7 +277,7 @@ class App:
             return None
 
         assert arg.value is not None
-        key = f"{arg.name}_input"
+        key = f'{arg.name}_input'
         text = str(arg.value)
         return Input(key=key, default_text=text, size=(40, 1), enable_events=True)
 
@@ -310,41 +309,41 @@ class App:
         return [[Frame(arg.description, ret, expand_x=True)]]
 
     def _create_main_window(self) -> Window:
-        assert self.config is not None, "Config must be loaded before creating the window"
+        assert self.config is not None, 'Config must be loaded before creating the window'
         layout: list[list[Element]] = []
         app_description = 'Run Chromium with custom arguments'
-        layout.append([Text(app_description, font=("Any", 12))])
+        layout.append([Text(app_description, font=('Any', 12))])
         layout.append([HorizontalSeparator()])
 
         # Browser path
         bp_row: list[Element] = []
-        bp_row.append(Text("Browser Path:"))
+        bp_row.append(Text('Browser Path:'))
         bp_row.append(Input(default_text=str(self.config.browser_path), size=(60, 1)))
         layout.append(bp_row)
 
         # Arguments
         layout.append([HorizontalSeparator()])
-        layout.append([Text("Command-Line Arguments:")])
+        layout.append([Text('Command-Line Arguments:')])
         for arg in self.config.args:
             layout.extend(self._create_layout_for_arg(arg))
 
         # Resulting command
         layout.append([HorizontalSeparator()])
-        layout.append([Text("Result Command:")])
+        layout.append([Text('Result Command:')])
         layout.append([self.command_output])
 
         # Run button
         layout.append([HorizontalSeparator()])
         key = 'run_browser_button'
-        layout.append([Button("Run Browser", key=key)])
+        layout.append([Button('Run Browser', key=key)])
         self.handlers[key] = self._run_browser
 
-        return Window("Chromium Runner", layout)
+        return Window('Chromium Runner', layout)
 
     def run_event_loop(self) -> None:
-        list_checkbox_suffix = "_list_checkbox"
-        checkbox_suffix = "_checkbox"
-        input_suffix = "_input"
+        LIST_CHECKBOX_SUFFIX = '_list_checkbox'
+        CHECKBOX_SUFFIX = '_checkbox'
+        INPUT_SUFFIX = '_input'
 
         # Event loop
         while True:
@@ -357,23 +356,23 @@ class App:
             if event in self.handlers:
                 self.handlers[event]()
 
-            elif event.endswith(list_checkbox_suffix):
-                arg_list_item_name = event.replace(list_checkbox_suffix, "", -1)
+            elif event.endswith(LIST_CHECKBOX_SUFFIX):
+                arg_list_item_name = event.replace(LIST_CHECKBOX_SUFFIX, '', -1)
                 item = self.config.find_arg_list_item(arg_list_item_name)
                 if item is not None:
                     item.enabled = values[event]
                     self.config.save()
 
-            elif event.endswith(checkbox_suffix):
+            elif event.endswith(CHECKBOX_SUFFIX):
                 # Cut off the suffix to get the arg name
-                arg_name = event.replace(checkbox_suffix, "", -1)
+                arg_name = event.replace(CHECKBOX_SUFFIX, '', -1)
                 arg = self.config.find_arg(arg_name)
                 if arg is not None:
                     arg.enabled = values[event]
                     self.config.save()
 
-            elif event.endswith(input_suffix):
-                arg_name = event.replace(input_suffix, "", -1)
+            elif event.endswith(INPUT_SUFFIX):
+                arg_name = event.replace(INPUT_SUFFIX, '', -1)
                 self.config.set_value(arg_name, values[event])
                 self.config.save()
 
@@ -387,6 +386,6 @@ def main(args: argparse.Namespace) -> None:
     App().run_event_loop()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     main(parser.parse_args())
