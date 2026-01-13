@@ -17,47 +17,10 @@ from typing import Callable, Self
 from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, Frame,
                            HorizontalSeparator, Input, Text, Window, theme)
 
+from static_config import DEFAULT_CONFIG
+
 # Set a theme for the GUI
 theme("dark grey 8")
-
-# If no config file exists, this default will be written to disk
-DEFAULT_CONFIG: dict = {
-    "browser_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "args": [
-        {
-            "name": "user-data-dir",
-            "description": "User data directory path",
-            "type": "string",
-            "value": "${env:HOME}\\Desktop\\User Data",
-            "enabled": True,
-        },
-        {
-            "name": "enable-logging",
-            "description": "Enable logging",
-            "type": "flag",
-            "value": None,
-            "enabled": True,
-        },
-        {
-            "name": "log-file",
-            "description": "Log file path",
-            "type": "string",
-            "value": "${env:HOME}\\Desktop\\Chromium_${tool:timestamp}.log",
-            "enabled": True,
-        },
-        {
-            "name": "vmodule",
-            "description": "Modules log verbosity (module=level,...)",
-            "type": "list",
-            "value": [
-                {"enabled": True, "value": "net=2"},
-                {"enabled": False, "value": "gpu=1"},
-                {"enabled": True, "value": "renderer=3"},
-            ],
-            "enabled": True,
-        },
-    ],
-}
 
 
 class AppContext:
@@ -201,7 +164,7 @@ class Config:
         json = Json.loads(filepath.read_text())
         self.browser_path = Path(json.get('browser_path', ''))
         if not self.browser_path.exists():
-            raise FileNotFoundError(f'No browser found at path: {self.browser_path}')
+            self.browser_path = ''
 
         self.args: list[Arg] = [Arg.from_json(arg_data) for arg_data in json.get('args', [])]
 
