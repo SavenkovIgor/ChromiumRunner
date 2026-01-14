@@ -163,9 +163,6 @@ class Config:
         self.path: Path = filepath
         json = Json.loads(filepath.read_text())
         self.browser_path = Path(json.get('browser_path', ''))
-        if not self.browser_path.exists():
-            self.browser_path = ''
-
         self.args: list[Arg] = [Arg.from_json(arg_data) for arg_data in json.get('args', [])]
 
     def save(self) -> None:
@@ -241,6 +238,10 @@ class Config:
             items = value.split(',')
             arg.value = [ArgListItem(enabled=True, value=item.strip()) for item in items]
 
+    def set_browser_path(self, path: Path) -> None:
+        self.browser_path = path
+        self.save()
+
 
 class App:
     def __init__(self) -> None:
@@ -250,6 +251,19 @@ class App:
 
         # UI elements
         self.handlers: dict[str, Callable] = {}
+
+        # Create browser path input in advance
+        self.browser_path_key = 'browser_path_input'
+        self.browser_path_input = Input(
+            key=self.browser_path_key,
+            default_text=str(self.config.browser_path),
+            text_color='white' if self.config.browser_path.exists() else 'red',
+            size=(60, 1),
+            enable_events=True,
+            expand_x=True,
+        )
+        self.handlers[self.browser_path_key] = self._on_browser_path_input
+
         self.command_output = Text(self.config.decorated_run_browser_command())
         self.window = self._create_main_window()
 
@@ -264,7 +278,7 @@ class App:
         print('No configuration files found. Exiting.')
         return None
 
-    def _run_browser(self) -> None:
+    def _run_browser(self, _: dict) -> None:
         command = self.config.run_browser_command()
         command_str = ' '.join(command)
         print(f'Running browser: {command_str}')
@@ -274,6 +288,14 @@ class App:
         if self.window is not None and self.config is not None:
             cmd = self.config.decorated_run_browser_command()
             self.command_output.update(cmd)
+
+    def _on_browser_path_input(self, values: dict) -> None:
+        if self.browser_path_key not in values:
+            return
+        path = Path(values[self.browser_path_key])
+        self.config.set_browser_path(path)
+        ok = self.config.browser_path.exists()
+        self.browser_path_input.update(text_color=('white' if ok else 'red'))
 
     @staticmethod
     def h_spacer() -> Element:
@@ -331,7 +353,7 @@ class App:
         # Browser path
         bp_row: list[Element] = []
         bp_row.append(Text('Browser Path:'))
-        bp_row.append(Input(default_text=str(self.config.browser_path), size=(60, 1)))
+        bp_row.append(self.browser_path_input)
         layout.append(bp_row)
 
         # Arguments
@@ -367,7 +389,7 @@ class App:
                 break
 
             if event in self.handlers:
-                self.handlers[event]()
+                self.handlers[event](values)
 
             elif event.endswith(LIST_CHECKBOX_SUFFIX):
                 arg_list_item_name = event.replace(LIST_CHECKBOX_SUFFIX, '', -1)
