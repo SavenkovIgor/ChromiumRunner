@@ -55,6 +55,8 @@ class AppContext:
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
+        # logging.info(f"Environment:\n{Json.dumps(dict(os.environ), indent=2)}")
+
 
 class UiContext:
     @staticmethod
