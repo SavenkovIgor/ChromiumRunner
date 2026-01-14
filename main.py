@@ -17,6 +17,7 @@ from typing import Callable, Self
 from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, Frame,
                            HorizontalSeparator, Input, Text, Window, theme)
 
+from os_tools import OsTools
 from static_config import DEFAULT_CONFIG
 
 # Set a theme for the GUI
@@ -97,6 +98,9 @@ class ValueInterpolator:
 
         return pattern.sub(repl, s)
 
+    def interpolate_path(self, path: Path) -> Path:
+        return Path(self.interpolate_string(str(path)))
+
 
 class ArgType(Enum):
     FLAG = 'flag'
@@ -163,14 +167,13 @@ class Config:
         self.path: Path = filepath
         json = Json.loads(filepath.read_text())
         self.browser_path = Path(json.get('browser_path', ''))
-        if not self.browser_path.exists():
-            self.browser_path = ''
-
+        self.additional_paths: list[Path] = [Path(p) for p in json.get('additional_paths', [])]
         self.args: list[Arg] = [Arg.from_json(arg_data) for arg_data in json.get('args', [])]
 
     def save(self) -> None:
         json: dict = {}
         json['browser_path'] = str(self.browser_path)
+        json['additional_paths'] = [str(p) for p in self.additional_paths]
         json['args'] = [arg.to_json() for arg in self.args]
         self.path.write_text(Json.dumps(json, indent=4) + '\n', newline='\n')
 
@@ -197,6 +200,9 @@ class Config:
             config_files = [path]
 
         return [cls(filepath) for filepath in config_files]
+
+    def interpolated_additional_path(self, index: int) -> Path:
+        return ValueInterpolator().interpolate_path(self.additional_paths[index])
 
     def run_browser_command(self) -> list[str]:
         args: list[str] = [str(self.browser_path)]
@@ -241,6 +247,10 @@ class Config:
             items = value.split(',')
             arg.value = [ArgListItem(enabled=True, value=item.strip()) for item in items]
 
+    def set_browser_path(self, path: Path) -> None:
+        self.browser_path = path
+        self.save()
+
 
 class App:
     def __init__(self) -> None:
@@ -250,6 +260,19 @@ class App:
 
         # UI elements
         self.handlers: dict[str, Callable] = {}
+
+        # Create browser path input in advance
+        self.browser_path_key = 'browser_path_input'
+        self.browser_path_input = Input(
+            key=self.browser_path_key,
+            default_text=str(self.config.browser_path),
+            text_color='white' if self.config.browser_path.exists() else 'red',
+            size=(60, 1),
+            enable_events=True,
+            expand_x=True,
+        )
+        self.handlers[self.browser_path_key] = self._on_browser_path_input
+
         self.command_output = Text(self.config.decorated_run_browser_command())
         self.window = self._create_main_window()
 
@@ -264,7 +287,7 @@ class App:
         print('No configuration files found. Exiting.')
         return None
 
-    def _run_browser(self) -> None:
+    def _run_browser(self, _: dict) -> None:
         command = self.config.run_browser_command()
         command_str = ' '.join(command)
         print(f'Running browser: {command_str}')
@@ -274,6 +297,14 @@ class App:
         if self.window is not None and self.config is not None:
             cmd = self.config.decorated_run_browser_command()
             self.command_output.update(cmd)
+
+    def _on_browser_path_input(self, values: dict) -> None:
+        if self.browser_path_key not in values:
+            return
+        path = Path(values[self.browser_path_key])
+        self.config.set_browser_path(path)
+        ok = self.config.browser_path.exists()
+        self.browser_path_input.update(text_color=('white' if ok else 'red'))
 
     @staticmethod
     def h_spacer() -> Element:
@@ -331,8 +362,18 @@ class App:
         # Browser path
         bp_row: list[Element] = []
         bp_row.append(Text('Browser Path:'))
-        bp_row.append(Input(default_text=str(self.config.browser_path), size=(60, 1)))
+        bp_row.append(self.browser_path_input)
         layout.append(bp_row)
+
+        # Additional paths
+        if self.config.additional_paths:
+            layout.append([HorizontalSeparator()])
+            layout.append([Text('Additional Paths:')])
+            for index, path in enumerate(self.config.additional_paths):
+                text = Text(str(path), expand_x=True)
+                open_button = Button('Open', key=f'{index}_open_additional_path')
+                delete_button = Button('Delete', key=f'{index}_delete_additional_path')
+                layout.append([text, open_button, delete_button])
 
         # Arguments
         layout.append([HorizontalSeparator()])
@@ -357,6 +398,8 @@ class App:
         LIST_CHECKBOX_SUFFIX = '_list_checkbox'
         CHECKBOX_SUFFIX = '_checkbox'
         INPUT_SUFFIX = '_input'
+        OPEN_ADDITIONAL_PATH_SUFFIX = '_open_additional_path'
+        DELETE_ADDITIONAL_PATH_SUFFIX = '_delete_additional_path'
 
         # Event loop
         while True:
@@ -367,7 +410,7 @@ class App:
                 break
 
             if event in self.handlers:
-                self.handlers[event]()
+                self.handlers[event](values)
 
             elif event.endswith(LIST_CHECKBOX_SUFFIX):
                 arg_list_item_name = event.replace(LIST_CHECKBOX_SUFFIX, '', -1)
@@ -388,6 +431,16 @@ class App:
                 arg_name = event.replace(INPUT_SUFFIX, '', -1)
                 self.config.set_value(arg_name, values[event])
                 self.config.save()
+
+            elif event.endswith(OPEN_ADDITIONAL_PATH_SUFFIX):
+                index_str = event.replace(OPEN_ADDITIONAL_PATH_SUFFIX, '', -1)
+                path = self.config.interpolated_additional_path(int(index_str))
+                OsTools.open_path(path)
+
+            elif event.endswith(DELETE_ADDITIONAL_PATH_SUFFIX):
+                index_str = event.replace(DELETE_ADDITIONAL_PATH_SUFFIX, '', -1)
+                path = self.config.interpolated_additional_path(int(index_str))
+                OsTools.delete_path(path)
 
             self._update_run_command_display()
 
