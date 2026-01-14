@@ -17,6 +17,7 @@ from typing import Callable, Self
 from FreeSimpleGUI import (WIN_CLOSED, Button, Checkbox, Element, Frame,
                            HorizontalSeparator, Input, Text, Window, theme)
 
+from os_tools import OsTools
 from static_config import DEFAULT_CONFIG
 
 # Set a theme for the GUI
@@ -96,6 +97,9 @@ class ValueInterpolator:
             return '${' + inner + '}'
 
         return pattern.sub(repl, s)
+
+    def interpolate_path(self, path: Path) -> Path:
+        return Path(self.interpolate_string(str(path)))
 
 
 class ArgType(Enum):
@@ -196,6 +200,9 @@ class Config:
             config_files = [path]
 
         return [cls(filepath) for filepath in config_files]
+
+    def interpolated_additional_path(self, index: int) -> Path:
+        return ValueInterpolator().interpolate_path(self.additional_paths[index])
 
     def run_browser_command(self) -> list[str]:
         args: list[str] = [str(self.browser_path)]
@@ -358,6 +365,16 @@ class App:
         bp_row.append(self.browser_path_input)
         layout.append(bp_row)
 
+        # Additional paths
+        if self.config.additional_paths:
+            layout.append([HorizontalSeparator()])
+            layout.append([Text('Additional Paths:')])
+            for index, path in enumerate(self.config.additional_paths):
+                text = Text(str(path), expand_x=True)
+                open_button = Button('Open', key=f'{index}_open_additional_path')
+                delete_button = Button('Delete', key=f'{index}_delete_additional_path')
+                layout.append([text, open_button, delete_button])
+
         # Arguments
         layout.append([HorizontalSeparator()])
         layout.append([Text('Command-Line Arguments:')])
@@ -381,6 +398,8 @@ class App:
         LIST_CHECKBOX_SUFFIX = '_list_checkbox'
         CHECKBOX_SUFFIX = '_checkbox'
         INPUT_SUFFIX = '_input'
+        OPEN_ADDITIONAL_PATH_SUFFIX = '_open_additional_path'
+        DELETE_ADDITIONAL_PATH_SUFFIX = '_delete_additional_path'
 
         # Event loop
         while True:
@@ -412,6 +431,16 @@ class App:
                 arg_name = event.replace(INPUT_SUFFIX, '', -1)
                 self.config.set_value(arg_name, values[event])
                 self.config.save()
+
+            elif event.endswith(OPEN_ADDITIONAL_PATH_SUFFIX):
+                index_str = event.replace(OPEN_ADDITIONAL_PATH_SUFFIX, '', -1)
+                path = self.config.interpolated_additional_path(int(index_str))
+                OsTools.open_path(path)
+
+            elif event.endswith(DELETE_ADDITIONAL_PATH_SUFFIX):
+                index_str = event.replace(DELETE_ADDITIONAL_PATH_SUFFIX, '', -1)
+                path = self.config.interpolated_additional_path(int(index_str))
+                OsTools.delete_path(path)
 
             self._update_run_command_display()
 
