@@ -2,6 +2,7 @@
 
 import argparse
 import json as Json
+import logging
 import os
 import re
 import subprocess
@@ -41,6 +42,19 @@ class AppContext:
     def config_dir() -> Path:
         return AppContext.script_dir()
 
+    @staticmethod
+    def init_logging(log_dir: Path) -> None:
+        """Initialize logging to app.log file."""
+        file = log_dir / 'app.log'
+        print(f'Logging to: {file}')
+        logging.basicConfig(
+            filename=file,
+            filemode='w',
+            level=logging.INFO,
+            format="%(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+
 
 class UiContext:
     @staticmethod
@@ -49,14 +63,14 @@ class UiContext:
         try:
             root = tk.Tk()
             root.withdraw()
-            print(f'window info:')
-            print(f'  pixels per inch: {root.winfo_fpixels("1i")}')
-            print(f'  current scaling: {root.tk.call("tk", "scaling")}')
+            logging.info(f'window info:')
+            logging.info(f'  pixels per inch: {root.winfo_fpixels("1i")}')
+            logging.info(f'  current scaling: {root.tk.call("tk", "scaling")}')
 
             scale: float = {'Windows': 1.5, 'Linux': 3.0}.get(system(), 1.0)
             root.tk.call('tk', 'scaling', scale)
         except Exception:
-            print('Failed to set UI scaling')
+            logging.error('Failed to set UI scaling')
 
 
 class ValueInterpolator:
@@ -86,7 +100,7 @@ class ValueInterpolator:
                 if val is not None:
                     return val
                 else:
-                    print(f'Missing env var: {name}')
+                    logging.warning(f'Missing env var: {name}')
 
             if inner.startswith(TOOL_PREFIX):
                 name = inner[len(TOOL_PREFIX) :]
@@ -188,7 +202,7 @@ class Config:
             return filepath
 
         filepath.write_text(Json.dumps(DEFAULT_CONFIG, indent=4) + '\n', newline='\n')
-        print(f'Default config created at: {filepath}')
+        logging.info(f'Default config created at: {filepath}')
         return filepath
 
     @classmethod
@@ -280,17 +294,17 @@ class App:
         config_dir = AppContext.config_dir()
         configs = Config.load_configs(config_dir)
         if configs:
-            print(f'Loaded configuration: {configs[0].path}')
+            logging.info(f'Loaded configuration: {configs[0].path}')
             configs[0].save()  # Save to ensure any defaults are written
             return configs[0]
 
-        print('No configuration files found. Exiting.')
+        logging.error('No configuration files found. Exiting.')
         return None
 
     def _run_browser(self, _: dict) -> None:
         command = self.config.run_browser_command()
         command_str = ' '.join(command)
-        print(f'Running browser: {command_str}')
+        logging.info(f'Running browser: {command_str}')
         subprocess.Popen(command_str)
 
     def _update_run_command_display(self) -> None:
@@ -448,6 +462,7 @@ class App:
 
 
 def main(args: argparse.Namespace) -> None:
+    AppContext.init_logging(AppContext.script_dir())
     UiContext.init_app_scaling()
     App().run_event_loop()
 
