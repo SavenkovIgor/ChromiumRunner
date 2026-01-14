@@ -23,6 +23,7 @@ Under the hood, it uses a JSON configuration file that defines the browser path 
 - 💾 Settings are saved in JSON config files
 - 🔧 Support for environment variables (`${env:VAR}`) and timestamps (`${tool:timestamp}`)
 - 👁️ Preview the full command before running it
+- 📂 Manage additional paths with open and delete functionality
 
 ![ChromiumRunner Screenshot](resources/app.png)
 
