@@ -163,11 +163,13 @@ class Config:
         self.path: Path = filepath
         json = Json.loads(filepath.read_text())
         self.browser_path = Path(json.get('browser_path', ''))
+        self.additional_paths: list[Path] = [Path(p) for p in json.get('additional_paths', [])]
         self.args: list[Arg] = [Arg.from_json(arg_data) for arg_data in json.get('args', [])]
 
     def save(self) -> None:
         json: dict = {}
         json['browser_path'] = str(self.browser_path)
+        json['additional_paths'] = [str(p) for p in self.additional_paths]
         json['args'] = [arg.to_json() for arg in self.args]
         self.path.write_text(Json.dumps(json, indent=4) + '\n', newline='\n')
 

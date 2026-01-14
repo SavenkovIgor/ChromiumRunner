@@ -3,6 +3,9 @@
 # If no config file exists, this default will be written to disk
 DEFAULT_CONFIG: dict = {
     "browser_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "additional_paths": [
+        "${env:HOME}\\AppData\\Local\\Google\\Chrome\\User Data",
+    ],
     "args": [
         {
             "name": "user-data-dir",
